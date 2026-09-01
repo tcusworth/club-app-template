@@ -35,6 +35,9 @@ export const users = mysqlTable("users", {
   emailVerified: boolean("emailVerified").default(false).notNull(),
   resetToken: varchar("resetToken", { length: 128 }),
   resetTokenExpiresAt: timestamp("resetTokenExpiresAt"),
+  suspendedAt: timestamp("suspendedAt"), // null = not suspended
+  suspensionReason: text("suspensionReason"),
+  suspendedBy: int("suspendedBy"),
 });
 
 export type User = typeof users.$inferSelect;
@@ -297,6 +300,7 @@ export const discussions = mysqlTable("discussions", {
   mediaUrls: json("mediaUrls").$type<string[]>(),
   isPinned: boolean("isPinned").default(false).notNull(),
   isLocked: boolean("isLocked").default(false).notNull(),
+  isHidden: boolean("isHidden").default(false).notNull(), // moderation: hidden from non-admins, not deleted
   viewCount: int("viewCount").default(0).notNull(),
   replyCount: int("replyCount").default(0).notNull(),
   lastReplyAt: timestamp("lastReplyAt"),
@@ -316,6 +320,7 @@ export const forumPosts = mysqlTable("forum_posts", {
   likeCount: int("likeCount").default(0).notNull(),
   isSolution: boolean("isSolution").default(false).notNull(),
   isEditorPick: boolean("isEditorPick").default(false).notNull(),
+  isHidden: boolean("isHidden").default(false).notNull(), // moderation: hidden from non-admins, not deleted
   mediaUrls: json("mediaUrls").$type<string[]>(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
@@ -454,6 +459,27 @@ export const profileFieldValues = mysqlTable("profile_field_values", {
 }));
 export type ProfileFieldValue = typeof profileFieldValues.$inferSelect;
 export type InsertProfileFieldValue = typeof profileFieldValues.$inferInsert;
+
+// ─── Content Reports (Moderation) ────────────────────────────────────
+// General-purpose flagging for ordinary discussion posts/replies —
+// separate from the existing contentNodes admin-approval workflow, which
+// only covers knowledge-base articles. A report doesn't hide anything by
+// itself; an admin/moderator reviews it and decides whether to hide the
+// content (isHidden on discussions/forumPosts) or dismiss the report.
+export const contentReports = mysqlTable("content_reports", {
+  id: int("id").autoincrement().primaryKey(),
+  targetType: mysqlEnum("targetType", ["discussion", "post"]).notNull(),
+  targetId: int("targetId").notNull(),
+  reportedBy: int("reportedBy").notNull(),
+  reason: text("reason").notNull(),
+  status: mysqlEnum("status", ["pending", "actioned", "dismissed"]).default("pending").notNull(),
+  reviewedBy: int("reviewedBy"),
+  reviewNotes: text("reviewNotes"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  reviewedAt: timestamp("reviewedAt"),
+});
+export type ContentReport = typeof contentReports.$inferSelect;
+export type InsertContentReport = typeof contentReports.$inferInsert;
 
 export const directMessages = mysqlTable("direct_messages", {
   id: int("id").autoincrement().primaryKey(),
