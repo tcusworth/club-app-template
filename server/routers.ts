@@ -2203,6 +2203,9 @@ Be thorough, vendor-neutral, and always cite specific capabilities or requiremen
     unsuspendUser: adminProcedure
       .input(z.object({ userId: z.number() }))
       .mutation(async ({ input }) => db.unsuspendUser(input.userId)),
+    searchMembersForModeration: adminProcedure
+      .input(z.object({ query: z.string() }))
+      .query(async ({ input }) => db.adminSearchMembers(input.query)),
   }),
   myGroups: router({
     list: protectedProcedure
