@@ -7,9 +7,9 @@
  * server/email.ts read the same value — edit it there, not here.
  *
  * NOT covered by this file (out of scope for this pass):
- *  - The 16+ other files that still hardcode "OPA Community" / the Shield
- *    icon directly (DashboardLayout, Landing, SignIn, etc.) — a full
- *    white-label pass should migrate those to read from here too.
+ *  - `client/index.html`'s static <title> tag — can't read this file at
+ *    build time; `main.tsx` sets the real tab title at runtime instead,
+ *    but the static fallback should still be updated by hand per club.
  *  - The `platformRole` values below are also enforced server-side by a
  *    Zod enum in server/routers.ts and by a MySQL enum column in
  *    drizzle/schema.ts. Changing ROLES here alone is NOT enough — for a
