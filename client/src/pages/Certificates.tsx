@@ -1,5 +1,6 @@
 import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/_core/hooks/useAuth";
+import { CLUB_NAME } from "@/lib/clubConfig";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -37,7 +38,7 @@ export default function Certificates() {
         </div>
         <div>
           <h1 className="text-2xl font-bold">Certificates & Credentials</h1>
-          <p className="text-muted-foreground">Earn and verify OPA Community certificates</p>
+          <p className="text-muted-foreground">Earn and verify {CLUB_NAME} certificates</p>
         </div>
       </div>
 

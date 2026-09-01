@@ -1,6 +1,7 @@
 import { useAuth } from "@/_core/hooks/useAuth";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { CLUB_NAME } from "@/lib/clubConfig";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -147,7 +148,7 @@ export default function ArchitectureBuilder() {
       svg += `<text x="${comp.x + 70}" y="${comp.y + 24}" text-anchor="middle" fill="${color}" font-size="12" font-family="system-ui, sans-serif">${comp.name}</text>`;
     });
 
-    svg += `<text x="${minX + 10}" y="${maxY - 10}" fill="#666" font-size="10" font-family="system-ui">OPA Community Architecture Diagram</text>`;
+    svg += `<text x="${minX + 10}" y="${maxY - 10}" fill="#666" font-size="10" font-family="system-ui">${CLUB_NAME} Architecture Diagram</text>`;
     svg += `</svg>`;
 
     const blob = new Blob([svg], { type: "image/svg+xml" });

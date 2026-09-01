@@ -1,5 +1,6 @@
 import { useAuth } from "@/_core/hooks/useAuth";
 import { trpc } from "@/lib/trpc";
+import { CLUB_NAME } from "@/lib/clubConfig";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -982,7 +983,7 @@ function EmailBlastTab() {
           <CardContent className="space-y-3">
             <div className="space-y-1.5">
               <Label htmlFor="blast-subject">Subject</Label>
-              <Input id="blast-subject" value={subject} onChange={e => setSubject(e.target.value)} placeholder="OPA Community — May update" />
+              <Input id="blast-subject" value={subject} onChange={e => setSubject(e.target.value)} placeholder={`${CLUB_NAME} — May update`} />
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="blast-body">Body (Markdown)</Label>
@@ -2189,7 +2190,7 @@ function LinkedInImportTab() {
                 </SelectContent>
               </Select>
               <p className="text-xs text-muted-foreground mt-1">
-                {postType === 'blog' ? 'Posts appear in the Blog section with full markdown rendering.' : 'Posts appear in the OPA Community Forum as discussion threads.'}
+                {postType === 'blog' ? 'Posts appear in the Blog section with full markdown rendering.' : `Posts appear in the ${CLUB_NAME} Forum as discussion threads.`}
               </p>
             </div>
             {postType === 'discussion' && (

@@ -2,7 +2,8 @@ import { useEffect, useState } from "react";
 import { useLocation, useSearch } from "wouter";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
-import { Shield, AlertCircle, Loader2 } from "lucide-react";
+import { AlertCircle, Loader2 } from "lucide-react";
+import { CLUB_NAME, CLUB_ICON } from "@/lib/clubConfig";
 import { toast } from "sonner";
 
 export default function MagicLinkVerify() {
@@ -39,9 +40,9 @@ export default function MagicLinkVerify() {
       <div className="w-full max-w-md">
         <div className="flex flex-col items-center mb-8">
           <div className="h-14 w-14 rounded-full bg-primary flex items-center justify-center mb-3 shadow-lg">
-            <Shield className="h-7 w-7 text-white" />
+            <CLUB_ICON className="h-7 w-7 text-white" />
           </div>
-          <h1 className="text-2xl font-bold text-foreground">OPA Community</h1>
+          <h1 className="text-2xl font-bold text-foreground">{CLUB_NAME}</h1>
         </div>
         <div className="bg-white rounded-2xl shadow-sm border border-border/50 p-8 text-center space-y-4">
           {error ? (

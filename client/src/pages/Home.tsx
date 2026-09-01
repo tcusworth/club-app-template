@@ -1,5 +1,6 @@
 import { useState, useRef, useMemo } from 'react';
 import { useAuth } from '@/_core/hooks/useAuth';
+import { CLUB_NAME } from '@/lib/clubConfig';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -244,7 +245,7 @@ export default function Home() {
             Welcome back, {user?.name?.split(' ')[0] || 'Member'}
           </h1>
           <p className="text-[15.5px] text-muted-foreground mt-1.5">
-            Here's what's happening in the OPA Community
+            Here's what's happening in the {CLUB_NAME}
           </p>
         </div>
         <div className="flex items-center gap-3">

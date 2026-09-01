@@ -22,7 +22,7 @@ import {
 import { useState, useEffect, useRef } from "react";
 import { useLocation } from "wouter";
 import { DashboardLayoutSkeleton } from "./DashboardLayoutSkeleton";
-import { FEATURES } from "@/lib/clubConfig";
+import { FEATURES, CLUB_NAME, CLUB_ICON } from "@/lib/clubConfig";
 
 // ── Nav structure ────────────────
 const discoverNav = [
@@ -59,12 +59,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         <div className="flex flex-col items-center gap-8 p-8 max-w-md w-full">
           <div className="flex flex-col items-center gap-2">
             <div className="flex items-center gap-2 mb-4">
-              <Shield className="h-8 w-8 text-primary" />
-              <span className="text-2xl font-semibold tracking-tight text-foreground">OPA Community</span>
+              <CLUB_ICON className="h-8 w-8 text-primary" />
+              <span className="text-2xl font-semibold tracking-tight text-foreground">{CLUB_NAME}</span>
             </div>
             <h1 className="text-xl font-medium text-center text-foreground">Sign in to continue</h1>
             <p className="text-sm text-muted-foreground text-center max-w-sm">
-              Access the OPA Community platform for tools and collaboration.
+              Access the {CLUB_NAME} platform for tools and collaboration.
             </p>
           </div>
           <div className="flex flex-col gap-3 w-full">
@@ -206,9 +206,9 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
           </button>
           <button onClick={() => navigate("/")} className="flex items-center gap-2">
             <div className="h-8 w-8 rounded-md bg-primary flex items-center justify-center shrink-0">
-              <Shield className="h-4 w-4 text-white" />
+              <CLUB_ICON className="h-4 w-4 text-white" />
             </div>
-            <span className="font-heading font-semibold text-xl tracking-tight text-foreground hidden sm:block">OPA Community</span>
+            <span className="font-heading font-semibold text-xl tracking-tight text-foreground hidden sm:block">{CLUB_NAME}</span>
           </button>
         </div>
 

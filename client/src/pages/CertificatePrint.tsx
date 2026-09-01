@@ -1,6 +1,7 @@
 import { trpc } from "@/lib/trpc";
 import { useRoute } from "wouter";
 import { useEffect } from "react";
+import { CLUB_NAME } from "@/lib/clubConfig";
 
 export default function CertificatePrint() {
   const [, params] = useRoute("/certificates/print/:uniqueId");
@@ -158,7 +159,7 @@ export default function CertificatePrint() {
             {isPractitioner && (
               <p className="text-sm text-gray-500 max-w-md mb-4">
                 Demonstrating comprehensive knowledge of Open Process Automation standards,
-                architecture, and implementation practices across all OPA Community courses.
+                architecture, and implementation practices across all {CLUB_NAME} courses.
               </p>
             )}
 

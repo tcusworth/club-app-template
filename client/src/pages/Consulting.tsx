@@ -2,6 +2,7 @@ import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { CLUB_NAME } from "@/lib/clubConfig";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
@@ -758,7 +759,7 @@ export default function Consulting() {
       {/* ── Why Us ─────────────────────────────────────────────────────── */}
       <Card className="opa-card rounded-lg border bg-card">
         <CardContent className="p-6">
-          <h2 className="font-heading text-[19px] font-semibold mb-5 text-center">Why Choose OPA Community Consulting?</h2>
+          <h2 className="font-heading text-[19px] font-semibold mb-5 text-center">Why Choose {CLUB_NAME} Consulting?</h2>
           <div className="grid md:grid-cols-3 gap-6">
             <div className="space-y-1.5">
               <div className="flex items-center gap-2">
@@ -786,7 +787,7 @@ export default function Consulting() {
                 <h3 className="font-semibold text-[15px]">Community-Backed</h3>
               </div>
               <p className="text-[13.5px] text-muted-foreground leading-normal">
-                Access the collective knowledge of the OPA Community. Our recommendations are
+                Access the collective knowledge of the {CLUB_NAME}. Our recommendations are
                 informed by real benchmarking data from member organizations.
               </p>
             </div>
