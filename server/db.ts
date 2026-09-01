@@ -1678,6 +1678,28 @@ export async function searchMembers(query: string, limit = 50, offset = 0) {
     .offset(offset);
 }
 
+// Admin-only variant of searchMembers that includes email and suspension
+// status — deliberately a separate function rather than adding those
+// fields to the public searchMembers above, which is callable by anyone,
+// authenticated or not.
+export async function adminSearchMembers(query: string, limit = 20) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select({
+    id: users.id,
+    name: users.name,
+    email: users.email,
+    suspendedAt: users.suspendedAt,
+    suspensionReason: users.suspensionReason,
+  })
+    .from(users)
+    .where(or(
+      like(users.name, `%${query}%`),
+      like(users.email, `%${query}%`),
+    ))
+    .limit(limit);
+}
+
 export async function getMembersByRole(platformRole: string, limit = 50, offset = 0) {
   const db = await getDb();
   if (!db) return [];
