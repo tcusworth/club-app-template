@@ -9,7 +9,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { toast } from "sonner";
 import {
-  Users, MessageSquare, Bell, ArrowLeft, Lock, Globe,
+  Users, MessageSquare, Bell, ArrowLeft, Lock, Globe, EyeOff,
   Crown, Shield, UserPlus, UserMinus, Check, X, Clock
 } from "lucide-react";
 
@@ -58,7 +58,7 @@ export default function GroupDetail() {
 
   const { data: pendingRequests = [], refetch: refetchPendingRequests } = trpc.forum.getPendingJoinRequests.useQuery(
     { groupId: group?.id ?? 0 },
-    { enabled: !!group?.id && canManageRequests && !!group?.isPrivate }
+    { enabled: !!group?.id && canManageRequests && group?.visibility !== "public" }
   );
 
   const respondToRequest = trpc.forum.respondToJoinRequest.useMutation({
@@ -112,7 +112,9 @@ export default function GroupDetail() {
           <div className="flex items-start justify-between gap-3">
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 mb-1">
-                {group.isPrivate ? (
+                {group.visibility === "secret" ? (
+                  <Badge variant="outline" className="gap-1 text-xs"><EyeOff className="w-3 h-3" /> Secret</Badge>
+                ) : group.visibility === "private" ? (
                   <Badge variant="outline" className="gap-1 text-xs"><Lock className="w-3 h-3" /> Private</Badge>
                 ) : (
                   <Badge variant="outline" className="gap-1 text-xs"><Globe className="w-3 h-3" /> Public</Badge>
@@ -131,7 +133,7 @@ export default function GroupDetail() {
                 disabled={joinGroup.isPending}
               >
                 <UserPlus className="w-4 h-4" />
-                {group.isPrivate ? "Request to Join" : "Join Group"}
+                {group.visibility !== "public" ? "Request to Join" : "Join Group"}
               </Button>
             )}
             {isMember && (
@@ -158,7 +160,7 @@ export default function GroupDetail() {
             <TabsTrigger value="announcements" className="gap-1.5">
               <Bell className="w-3.5 h-3.5" /> Announcements
             </TabsTrigger>
-            {canManageRequests && group.isPrivate && (
+            {canManageRequests && group.visibility !== "public" && (
               <TabsTrigger value="requests" className="gap-1.5">
                 <Clock className="w-3.5 h-3.5" /> Requests
                 {pendingRequests.length > 0 && (
@@ -240,7 +242,7 @@ export default function GroupDetail() {
             )}
           </TabsContent>
 
-          {canManageRequests && group.isPrivate && (
+          {canManageRequests && group.visibility !== "public" && (
             <TabsContent value="requests" className="mt-3 space-y-2">
               {pendingRequests.length === 0 ? (
                 <div className="text-center py-10 text-muted-foreground">
