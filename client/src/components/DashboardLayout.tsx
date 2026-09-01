@@ -31,6 +31,7 @@ const discoverNav = [
   { icon: Rss, label: "Blog", path: "/blog" },
   { icon: Hash, label: "Tags", path: "/tags" },
   { icon: Users, label: "Member Directory", path: "/members" },
+  { icon: FolderOpen, label: "Documents", path: "/documents" },
 ];
 
 const resourcesNav = [
