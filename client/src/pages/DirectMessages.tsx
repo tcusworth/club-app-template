@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useAuth } from '@/_core/hooks/useAuth';
+import { CLUB_NAME } from '@/lib/clubConfig';
 import { trpc } from '@/lib/trpc';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -157,7 +158,7 @@ export default function DirectMessages() {
             </Avatar>
             <div>
               <p className="font-semibold text-foreground">Member #{selectedUserId}</p>
-              <p className="text-xs text-muted-foreground">OPA Community Member</p>
+              <p className="text-xs text-muted-foreground">{CLUB_NAME} Member</p>
             </div>
           </div>
 

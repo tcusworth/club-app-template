@@ -1,6 +1,7 @@
 import { useState, useRef } from "react";
 import { useLocation } from "wouter";
 import { useAuth } from "@/_core/hooks/useAuth";
+import { CLUB_NAME } from "@/lib/clubConfig";
 import SectionHeroBanner from '@/components/SectionHeroBanner';
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
@@ -109,7 +110,7 @@ export default function Blog() {
       {/* Header */}
       <div className="flex items-start justify-between flex-wrap gap-4">
         <div>
-          <h1 className="font-heading text-[34px] font-semibold leading-tight">OPA Community Blog</h1>
+          <h1 className="font-heading text-[34px] font-semibold leading-tight">{CLUB_NAME} Blog</h1>
           <p className="text-[15.5px] text-muted-foreground mt-1.5">Insights, updates, and stories from the community</p>
         </div>
         {isAuthor && (
@@ -156,7 +157,7 @@ export default function Blog() {
             <Newspaper className="h-12 w-12 text-muted-foreground/20 mx-auto mb-4" />
             <h3 className="font-medium text-foreground mb-2">No posts yet</h3>
             <p className="text-sm text-muted-foreground mb-4">
-              Be the first to share an insight with the OPA Community.
+              Be the first to share an insight with the {CLUB_NAME}.
             </p>
             {isAuthor && (
               <Button onClick={() => setShowCreate(true)}>

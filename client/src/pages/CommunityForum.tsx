@@ -1,6 +1,7 @@
 import { Link, useLocation } from 'wouter';
 import { useState, useRef } from 'react';
 import { useAuth } from '@/_core/hooks/useAuth';
+import { CLUB_NAME } from '@/lib/clubConfig';
 import { trpc } from '@/lib/trpc';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -149,7 +150,7 @@ export default function CommunityForum() {
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
           <div>
-            <h1 className="text-3xl font-bold text-foreground">OPA Community Forum</h1>
+            <h1 className="text-3xl font-bold text-foreground">{CLUB_NAME} Forum</h1>
             <p className="text-muted-foreground mt-1">Connect, learn, and share with the O-PAS community</p>
           </div>
           {user && (

@@ -6,6 +6,7 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { useLocation } from 'wouter';
 import { trpc } from '@/lib/trpc';
 import { useEffect } from 'react';
+import { CLUB_NAME } from '@/lib/clubConfig';
 import {
   MessageSquare, Users, BookOpen, Trophy, Zap, Shield,
   ArrowRight, CheckCircle, Lightbulb, Network, GitBranch,
@@ -75,9 +76,9 @@ export default function Home() {
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 bg-gradient-to-br from-blue-400 to-cyan-400 rounded-lg flex items-center justify-center font-bold text-slate-900">
-              O
+              {CLUB_NAME.charAt(0)}
             </div>
-            <span className="font-bold text-lg">OPA Community</span>
+            <span className="font-bold text-lg">{CLUB_NAME}</span>
           </div>
           <div className="flex items-center gap-3">
             <Button
@@ -115,7 +116,7 @@ export default function Home() {
           <h1 className="text-5xl sm:text-6xl font-bold leading-tight">
             Master Open Process Automation
             <span className="block bg-gradient-to-r from-blue-400 via-cyan-400 to-teal-400 bg-clip-text text-transparent">
-              with the OPA Community
+              with the {CLUB_NAME}
             </span>
           </h1>
 
@@ -270,7 +271,7 @@ export default function Home() {
       {/* CTA Section */}
       <section className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
         <div className="bg-gradient-to-r from-blue-600/20 to-cyan-600/20 border border-blue-500/30 rounded-2xl p-12 text-center">
-          <h2 className="text-4xl font-bold mb-4">Ready to Join the OPA Community?</h2>
+          <h2 className="text-4xl font-bold mb-4">Ready to Join the {CLUB_NAME}?</h2>
           <p className="text-xl text-slate-300 mb-8 max-w-2xl mx-auto">
             Connect with industry experts, learn O-PAS architecture, and stay ahead of the automation transformation.
           </p>
@@ -291,9 +292,9 @@ export default function Home() {
             <div>
               <div className="flex items-center gap-2 mb-4">
                 <div className="w-8 h-8 bg-gradient-to-br from-blue-400 to-cyan-400 rounded-lg flex items-center justify-center font-bold text-slate-900">
-                  O
+                  {CLUB_NAME.charAt(0)}
                 </div>
-                <span className="font-bold">OPA Community</span>
+                <span className="font-bold">{CLUB_NAME}</span>
               </div>
               <p className="text-sm text-slate-400">The vendor-neutral automation community</p>
             </div>
@@ -322,7 +323,7 @@ export default function Home() {
             </div>
           </div>
           <div className="border-t border-slate-700/50 pt-8 text-center text-sm text-slate-400">
-            <p>&copy; 2026 OPA Community. All rights reserved.</p>
+            <p>&copy; 2026 {CLUB_NAME}. All rights reserved.</p>
           </div>
         </div>
       </footer>
