@@ -1266,6 +1266,7 @@ Be thorough, vendor-neutral, and always cite specific capabilities or requiremen
         mediaUrls: z.array(z.string().url()).optional(),
       }))
       .mutation(async ({ ctx, input }) => {
+        db.assertNotSuspended(ctx.user);
         const result = await db.createDiscussion({
           ...input,
           content: sanitizeUserHtml(input.content),
@@ -1290,8 +1291,8 @@ Be thorough, vendor-neutral, and always cite specific capabilities or requiremen
       }),
     getDiscussionBySlug: publicProcedure
       .input(z.object({ slug: z.string() }))
-      .query(async ({ input }) => {
-        const discussion = await db.getDiscussionBySlug(input.slug);
+      .query(async ({ ctx, input }) => {
+        const discussion = await db.getDiscussionBySlug(input.slug, ctx.user?.role === "admin");
         if (discussion) {
           await db.incrementDiscussionViewCount(discussion.id);
         }
@@ -1305,6 +1306,7 @@ Be thorough, vendor-neutral, and always cite specific capabilities or requiremen
         mediaUrls: z.array(z.string().url()).optional(),
       }))
       .mutation(async ({ ctx, input }) => {
+        db.assertNotSuspended(ctx.user);
         const result = await db.createForumPost({
           ...input,
           content: sanitizeUserHtml(input.content),
@@ -1340,15 +1342,15 @@ Be thorough, vendor-neutral, and always cite specific capabilities or requiremen
       }),
     getPostsByDiscussion: publicProcedure
       .input(z.object({ discussionId: z.number() }))
-      .query(async ({ input }) => {
-        return db.getForumPostsByDiscussion(input.discussionId);
+      .query(async ({ ctx, input }) => {
+        return db.getForumPostsByDiscussion(input.discussionId, ctx.user?.role === "admin");
       }),
     createGroup: protectedProcedure
       .input(z.object({
         name: z.string().min(3).max(256),
         slug: z.string().min(3).max(256),
         description: z.string().optional(),
-        isPrivate: z.boolean().optional(),
+        visibility: z.enum(["public", "private", "secret"]).optional(),
       }))
       .mutation(async ({ ctx, input }) => {
         return db.createForumGroup({
@@ -1358,8 +1360,8 @@ Be thorough, vendor-neutral, and always cite specific capabilities or requiremen
       }),
     getGroups: publicProcedure
       .input(z.object({ limit: z.number().optional(), offset: z.number().optional() }))
-      .query(async ({ input }) => {
-        return db.getForumGroups(input.limit || 20, input.offset || 0);
+      .query(async ({ ctx, input }) => {
+        return db.getForumGroups(input.limit || 20, input.offset || 0, ctx.user?.id);
       }),
     getGroupBySlug: publicProcedure
       .input(z.object({ slug: z.string() }))
@@ -2098,6 +2100,112 @@ Be thorough, vendor-neutral, and always cite specific capabilities or requiremen
       .query(async ({ ctx }) => db.getPendingConnectionRequests(ctx.user.id)),
     myMutualConnections: protectedProcedure
       .query(async ({ ctx }) => db.getMutualConnections(ctx.user.id)),
+  }),
+  documents: router({
+    listFolders: publicProcedure
+      .input(z.object({ groupId: z.number().optional(), parentFolderId: z.number().optional() }))
+      .query(async ({ input }) => db.listDocumentFolders(input)),
+    createFolder: protectedProcedure
+      .input(z.object({ groupId: z.number().optional(), parentFolderId: z.number().optional(), name: z.string().min(1).max(256) }))
+      .mutation(async ({ ctx, input }) => db.createDocumentFolder({ ...input, createdBy: ctx.user.id, requesterRole: ctx.user.role })),
+    list: publicProcedure
+      .input(z.object({ groupId: z.number().optional(), folderId: z.number().optional() }))
+      .query(async ({ input }) => db.listDocuments(input)),
+    upload: protectedProcedure
+      .input(z.object({
+        title: z.string().min(1).max(256),
+        description: z.string().optional(),
+        folderId: z.number().optional(),
+        groupId: z.number().optional(),
+        fileName: z.string(),
+        mimeType: z.string(),
+        base64Data: z.string(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const { safeName, mimeType } = resolveUploadMeta(input.fileName);
+        const buffer = Buffer.from(input.base64Data, "base64");
+        assertUploadSize(buffer.length);
+        const suffix = nanoid(8);
+        const fileKey = `documents/${ctx.user.id}/${suffix}-${safeName}`;
+        const { url } = await storagePut(fileKey, buffer, mimeType);
+        return db.createDocument({
+          folderId: input.folderId,
+          groupId: input.groupId,
+          title: input.title,
+          description: input.description,
+          fileKey,
+          url,
+          mimeType,
+          sizeBytes: buffer.length,
+          uploadedBy: ctx.user.id,
+          requesterRole: ctx.user.role,
+        });
+      }),
+    delete: protectedProcedure
+      .input(z.object({ documentId: z.number() }))
+      .mutation(async ({ ctx, input }) => db.deleteDocument(input.documentId, ctx.user.id, ctx.user.role)),
+  }),
+  profileFields: router({
+    list: publicProcedure
+      .query(async () => db.listProfileFieldDefinitions()),
+    create: adminProcedure
+      .input(z.object({
+        fieldKey: z.string().min(1).max(64),
+        label: z.string().min(1).max(128),
+        fieldType: z.enum(["text", "textarea", "select", "url", "date", "number"]),
+        options: z.array(z.string()).optional(),
+        isRequired: z.boolean().optional(),
+        sortOrder: z.number().optional(),
+      }))
+      .mutation(async ({ input }) => db.createProfileFieldDefinition(input)),
+    update: adminProcedure
+      .input(z.object({
+        id: z.number(),
+        label: z.string().optional(),
+        fieldType: z.enum(["text", "textarea", "select", "url", "date", "number"]).optional(),
+        options: z.array(z.string()).optional(),
+        isRequired: z.boolean().optional(),
+        sortOrder: z.number().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const { id, ...data } = input;
+        return db.updateProfileFieldDefinition(id, data);
+      }),
+    delete: adminProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input }) => db.deleteProfileFieldDefinition(input.id)),
+    getValues: publicProcedure
+      .input(z.object({ userId: z.number() }))
+      .query(async ({ input }) => db.getProfileFieldValues(input.userId)),
+    setValue: protectedProcedure
+      .input(z.object({ fieldDefinitionId: z.number(), value: z.string() }))
+      .mutation(async ({ ctx, input }) => db.setProfileFieldValue(ctx.user.id, input.fieldDefinitionId, input.value)),
+  }),
+  moderation: router({
+    report: protectedProcedure
+      .input(z.object({
+        targetType: z.enum(["discussion", "post"]),
+        targetId: z.number(),
+        reason: z.string().min(1).max(1000),
+      }))
+      .mutation(async ({ ctx, input }) => db.reportContent({ ...input, reportedBy: ctx.user.id })),
+    getPendingReports: adminProcedure
+      .query(async () => db.getPendingReports()),
+    resolveReport: adminProcedure
+      .input(z.object({ reportId: z.number(), action: z.enum(["dismiss", "hide"]), reviewNotes: z.string().optional() }))
+      .mutation(async ({ ctx, input }) => db.resolveReport(input.reportId, ctx.user.id, input.action, input.reviewNotes)),
+    setHidden: adminProcedure
+      .input(z.object({ targetType: z.enum(["discussion", "post"]), targetId: z.number(), isHidden: z.boolean() }))
+      .mutation(async ({ input }) => db.setContentHidden(input.targetType, input.targetId, input.isHidden)),
+    suspendUser: adminProcedure
+      .input(z.object({ userId: z.number(), reason: z.string().min(1).max(500) }))
+      .mutation(async ({ ctx, input }) => db.suspendUser(input.userId, input.reason, ctx.user.id)),
+    unsuspendUser: adminProcedure
+      .input(z.object({ userId: z.number() }))
+      .mutation(async ({ input }) => db.unsuspendUser(input.userId)),
+    searchMembersForModeration: adminProcedure
+      .input(z.object({ query: z.string() }))
+      .query(async ({ input }) => db.adminSearchMembers(input.query)),
   }),
   myGroups: router({
     list: protectedProcedure

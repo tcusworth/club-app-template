@@ -25,7 +25,7 @@ import { CATEGORY_HUES, CATEGORY_COLORS } from "@/lib/categoryColors";
 import {
   Shield, Users, FileText, Layers, Building2, FolderKanban,
   AlertCircle, CheckCircle2, XCircle, Clock, Eye, ChevronRight,
-  Plus, Trash2, Edit, Send, BarChart3, Mail, Upload, ArrowRight, Zap,
+  Plus, Trash2, Edit, Send, BarChart3, Mail, Upload, ArrowRight, Zap, UserCog, Flag,
   UserCheck, Linkedin, ScrollText, TrendingUp, RefreshCw,
   GraduationCap, BookOpen, ClipboardList, ArrowUp, ArrowDown, Pencil,
   FileSpreadsheet, AlertTriangle, Download, Check,
@@ -94,7 +94,9 @@ const ADMIN_NAV: AdminNavGroup[] = [
   {
     label: "System",
     items: [
+      { id: "community-moderation", label: "Reports & Suspensions", icon: Flag, description: "Review reported discussions/replies and manage member suspensions.", component: CommunityModerationTab },
       { id: "workflows", label: "Workflows", icon: Zap, description: "Toggle automated platform workflows.", component: WorkflowsTab },
+      { id: "profile-fields", label: "Profile Fields", icon: UserCog, description: "Manage custom fields members fill in on their profile.", component: ProfileFieldsTab },
       { id: "audit-logs", label: "Audit Logs", icon: ScrollText, description: "Review the platform audit trail.", component: AuditLogsTab },
     ],
   },
@@ -2317,6 +2319,305 @@ function LinkedInImportTab() {
 }
 
 // ─── Workflows Tab ──────────────────────────────────────────────────
+function ProfileFieldsTab() {
+  const { data: fields, isLoading, refetch } = trpc.profileFields.list.useQuery();
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [fieldKey, setFieldKey] = useState("");
+  const [label, setLabel] = useState("");
+  const [fieldType, setFieldType] = useState<"text" | "textarea" | "select" | "url" | "date" | "number">("text");
+  const [optionsText, setOptionsText] = useState("");
+  const [isRequired, setIsRequired] = useState(false);
+
+  const createField = trpc.profileFields.create.useMutation({
+    onSuccess: () => { toast.success("Field created"); refetch(); closeDialog(); },
+    onError: (e) => toast.error(e.message),
+  });
+  const updateField = trpc.profileFields.update.useMutation({
+    onSuccess: () => { toast.success("Field updated"); refetch(); closeDialog(); },
+    onError: (e) => toast.error(e.message),
+  });
+  const deleteField = trpc.profileFields.delete.useMutation({
+    onSuccess: () => { toast.success("Field deleted"); refetch(); },
+    onError: (e) => toast.error(e.message),
+  });
+
+  const closeDialog = () => {
+    setDialogOpen(false);
+    setEditingId(null);
+    setFieldKey("");
+    setLabel("");
+    setFieldType("text");
+    setOptionsText("");
+    setIsRequired(false);
+  };
+
+  const openCreateDialog = () => {
+    closeDialog();
+    setDialogOpen(true);
+  };
+
+  const openEditDialog = (f: any) => {
+    setEditingId(f.id);
+    setFieldKey(f.fieldKey);
+    setLabel(f.label);
+    setFieldType(f.fieldType);
+    setOptionsText((f.options || []).join(", "));
+    setIsRequired(f.isRequired);
+    setDialogOpen(true);
+  };
+
+  const handleSave = () => {
+    const options = fieldType === "select" ? optionsText.split(",").map(s => s.trim()).filter(Boolean) : undefined;
+    if (editingId) {
+      updateField.mutate({ id: editingId, label, fieldType, options, isRequired });
+    } else {
+      createField.mutate({ fieldKey, label, fieldType, options, isRequired, sortOrder: (fields?.length ?? 0) });
+    }
+  };
+
+  if (isLoading) return <div className="text-center py-8 text-muted-foreground">Loading fields...</div>;
+
+  return (
+    <div className="space-y-6">
+      <Card className="opa-card">
+        <CardHeader className="flex flex-row items-center justify-between space-y-0">
+          <div>
+            <CardTitle className="flex items-center gap-2"><UserCog className="w-5 h-5 text-amber-400" />Custom Profile Fields</CardTitle>
+            <CardDescription>Additional fields members fill in on their profile, beyond the built-in bio/company/location.</CardDescription>
+          </div>
+          <Button size="sm" className="gap-1.5" onClick={openCreateDialog}><Plus className="w-4 h-4" /> Add Field</Button>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-3">
+            {(fields ?? []).map((f: any) => (
+              <div key={f.id} className="flex items-start justify-between p-4 border rounded-lg hover:bg-muted/30 transition-colors">
+                <div className="flex-1 min-w-0 pr-4">
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="font-medium text-sm">{f.label}</span>
+                    <Badge variant="secondary" className="text-xs">{f.fieldType}</Badge>
+                    {f.isRequired && <Badge variant="outline" className="text-xs">Required</Badge>}
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Key: <code className="bg-muted px-1 rounded">{f.fieldKey}</code>
+                    {f.fieldType === "select" && f.options?.length ? ` · Options: ${f.options.join(", ")}` : ""}
+                  </p>
+                </div>
+                <div className="flex gap-2 shrink-0">
+                  <Button variant="outline" size="sm" onClick={() => openEditDialog(f)}><Edit className="w-3.5 h-3.5" /></Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => { if (confirm(`Delete "${f.label}"? Any member values stored for it will also be deleted.`)) deleteField.mutate({ id: f.id }); }}
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </Button>
+                </div>
+              </div>
+            ))}
+            {(!fields || fields.length === 0) && (
+              <div className="text-center py-8 text-muted-foreground">
+                <UserCog className="w-8 h-8 mx-auto mb-2 opacity-30" />
+                <p>No custom fields yet. Add one to collect extra info on member profiles.</p>
+              </div>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+
+      <Dialog open={dialogOpen} onOpenChange={(open) => { if (!open) closeDialog(); else setDialogOpen(true); }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{editingId ? "Edit field" : "Add field"}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            {!editingId && (
+              <div className="space-y-1.5">
+                <Label>Field key</Label>
+                <Input value={fieldKey} onChange={e => setFieldKey(e.target.value)} placeholder="e.g. t_shirt_size" />
+                <p className="text-xs text-muted-foreground">A stable internal identifier. Can't be changed after creation.</p>
+              </div>
+            )}
+            <div className="space-y-1.5">
+              <Label>Label</Label>
+              <Input value={label} onChange={e => setLabel(e.target.value)} placeholder="e.g. T-Shirt Size" />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Field type</Label>
+              <Select value={fieldType} onValueChange={(v: any) => setFieldType(v)}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="text">Text</SelectItem>
+                  <SelectItem value="textarea">Long text</SelectItem>
+                  <SelectItem value="select">Dropdown (choose one)</SelectItem>
+                  <SelectItem value="url">URL</SelectItem>
+                  <SelectItem value="date">Date</SelectItem>
+                  <SelectItem value="number">Number</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            {fieldType === "select" && (
+              <div className="space-y-1.5">
+                <Label>Options (comma-separated)</Label>
+                <Textarea value={optionsText} onChange={e => setOptionsText(e.target.value)} placeholder="Small, Medium, Large" />
+              </div>
+            )}
+            <div className="flex items-center gap-2">
+              <input type="checkbox" id="isRequired" checked={isRequired} onChange={e => setIsRequired(e.target.checked)} className="h-4 w-4" />
+              <Label htmlFor="isRequired" className="cursor-pointer font-normal">Required field</Label>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={closeDialog}>Cancel</Button>
+            <Button
+              onClick={handleSave}
+              disabled={!label || (!editingId && !fieldKey) || createField.isPending || updateField.isPending}
+            >
+              {editingId ? "Save Changes" : "Create Field"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}
+
+function CommunityModerationTab() {
+  const { data: reports, isLoading: reportsLoading, refetch: refetchReports } = trpc.moderation.getPendingReports.useQuery();
+  const [memberSearch, setMemberSearch] = useState("");
+  const [suspendTarget, setSuspendTarget] = useState<{ id: number; name: string } | null>(null);
+  const [suspendReason, setSuspendReason] = useState("");
+
+  const memberSearchQuery = trpc.moderation.searchMembersForModeration.useQuery(
+    { query: memberSearch },
+    { enabled: memberSearch.trim().length >= 2 }
+  );
+
+  const resolveReport = trpc.moderation.resolveReport.useMutation({
+    onSuccess: () => { toast.success("Report resolved"); refetchReports(); },
+    onError: (e) => toast.error(e.message),
+  });
+
+  const suspendUser = trpc.moderation.suspendUser.useMutation({
+    onSuccess: () => { toast.success("Member suspended"); setSuspendTarget(null); setSuspendReason(""); },
+    onError: (e) => toast.error(e.message),
+  });
+
+  const unsuspendUser = trpc.moderation.unsuspendUser.useMutation({
+    onSuccess: () => toast.success("Suspension lifted"),
+    onError: (e) => toast.error(e.message),
+  });
+
+  return (
+    <div className="space-y-6">
+      <Card className="opa-card">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2"><Flag className="w-5 h-5 text-amber-400" />Pending Reports</CardTitle>
+          <CardDescription>Discussions and replies flagged by members. Hiding removes it from view for everyone except admins — it isn't deleted.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          {reportsLoading ? (
+            <div className="text-center py-8 text-muted-foreground">Loading reports...</div>
+          ) : !reports || reports.length === 0 ? (
+            <div className="text-center py-8 text-muted-foreground">
+              <Flag className="w-8 h-8 mx-auto mb-2 opacity-30" />
+              <p>No pending reports.</p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {reports.map((r: any) => (
+                <div key={r.report.id} className="p-4 border rounded-lg space-y-2">
+                  <div className="flex items-center justify-between flex-wrap gap-2">
+                    <div className="flex items-center gap-2">
+                      <Badge variant="secondary" className="text-xs">{r.report.targetType}</Badge>
+                      <span className="text-xs text-muted-foreground">Reported by {r.reporter.name || r.reporter.email}</span>
+                      <span className="text-xs text-muted-foreground">· {new Date(r.report.createdAt).toLocaleDateString()}</span>
+                    </div>
+                    {r.content?.isHidden && <Badge variant="outline" className="text-xs">Already hidden</Badge>}
+                  </div>
+                  <p className="text-sm"><span className="text-muted-foreground">Reason: </span>{r.report.reason}</p>
+                  <div className="bg-muted/40 rounded p-2 text-xs text-muted-foreground line-clamp-3">
+                    {r.content ? (r.content.title ? `${r.content.title} — ` : "") + (r.content.content?.slice(0, 300) || "") : "(content no longer exists)"}
+                  </div>
+                  <div className="flex gap-2">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => resolveReport.mutate({ reportId: r.report.id, action: "dismiss" })}
+                      disabled={resolveReport.isPending}
+                    >
+                      Dismiss
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="destructive"
+                      onClick={() => resolveReport.mutate({ reportId: r.report.id, action: "hide" })}
+                      disabled={resolveReport.isPending || r.content?.isHidden}
+                    >
+                      Hide Content
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      <Card className="opa-card">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2"><UserCog className="w-5 h-5 text-amber-400" />Member Suspension</CardTitle>
+          <CardDescription>Search for a member to suspend or reinstate. Suspended members can't post new discussions or replies.</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <Input value={memberSearch} onChange={e => setMemberSearch(e.target.value)} placeholder="Search members by name or email..." />
+          {memberSearchQuery.data && memberSearchQuery.data.length > 0 && (
+            <div className="space-y-2">
+              {memberSearchQuery.data.map((m: any) => (
+                <div key={m.id} className="flex items-center justify-between p-3 border rounded-lg">
+                  <div>
+                    <p className="text-sm font-medium">{m.name || m.email}</p>
+                    {m.suspendedAt && <p className="text-xs text-destructive">Suspended{m.suspensionReason ? `: ${m.suspensionReason}` : ""}</p>}
+                  </div>
+                  {m.suspendedAt ? (
+                    <Button size="sm" variant="outline" onClick={() => unsuspendUser.mutate({ userId: m.id })} disabled={unsuspendUser.isPending}>
+                      Lift Suspension
+                    </Button>
+                  ) : (
+                    <Button size="sm" variant="destructive" onClick={() => setSuspendTarget({ id: m.id, name: m.name || m.email })}>
+                      Suspend
+                    </Button>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      <Dialog open={!!suspendTarget} onOpenChange={(open) => { if (!open) { setSuspendTarget(null); setSuspendReason(""); } }}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Suspend {suspendTarget?.name}</DialogTitle></DialogHeader>
+          <div className="py-2 space-y-1.5">
+            <Label>Reason</Label>
+            <Textarea value={suspendReason} onChange={e => setSuspendReason(e.target.value)} rows={3} />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setSuspendTarget(null)}>Cancel</Button>
+            <Button
+              variant="destructive"
+              disabled={!suspendReason.trim() || suspendUser.isPending}
+              onClick={() => suspendTarget && suspendUser.mutate({ userId: suspendTarget.id, reason: suspendReason.trim() })}
+            >
+              Suspend Member
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}
+
 function WorkflowsTab() {
   const { data: workflows, isLoading, refetch } = trpc.workflows.list.useQuery();
   const { data: events, isLoading: eventsLoading } = trpc.workflows.events.useQuery({ limit: 30 });
