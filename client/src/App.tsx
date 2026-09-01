@@ -34,6 +34,8 @@ import BlogPost from "./pages/BlogPost";
 import Notifications from "./pages/Notifications";
 import Events from "./pages/Events";
 import DocumentLibrary from "./pages/DocumentLibrary";
+import Terms from "./pages/Terms";
+import Privacy from "./pages/Privacy";
 import GroupDetail from "./pages/GroupDetail";
 import MyProfile from "./pages/MyProfile";
 import MyConnections from "./pages/MyConnections";
@@ -218,6 +220,8 @@ function Router() {
       <Route path="/forgot-password" component={ForgotPassword} />
       <Route path="/reset-password" component={ResetPassword} />
       <Route path="/auth/magic-link" component={MagicLinkVerify} />
+      <Route path="/terms" component={Terms} />
+      <Route path="/privacy" component={Privacy} />
       <Route path="/404" component={NotFound} />
       <Route component={NotFound} />
     </Switch>
