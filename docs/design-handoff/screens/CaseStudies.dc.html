@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="_ds/industry-b47a5d0d-b86d-4512-9a7b-cd4fef1d7898/styles.css">
+  <script src="_ds/industry-b47a5d0d-b86d-4512-9a7b-cd4fef1d7898/_ds_bundle.js"></script>
+  <style>
+    body { margin: 0; }
+    a { color: var(--color-accent-700); }
+    a:hover { color: var(--color-accent-900); }
+    ::-webkit-scrollbar { width: 10px; height: 10px; }
+    ::-webkit-scrollbar-thumb { background: var(--color-neutral-300); }
+    select.input { appearance: none; }
+  </style>
+</helmet>
+
+<div style="min-height:100vh;display:flex;flex-direction:column;background:var(--color-bg);color:var(--color-text);font-family:var(--font-body);">
+
+  <!-- ── Header ─────────────────────────────────────────────── -->
+  <header style="position:sticky;top:0;z-index:50;height:60px;flex-shrink:0;display:flex;align-items:center;gap:var(--space-4);padding:0 var(--space-4);background:var(--color-bg);border-bottom:1px solid var(--color-divider);">
+    <button onClick="{{ toggleSidebar }}" aria-label="Toggle sidebar" style="width:34px;height:34px;flex-shrink:0;display:flex;align-items:center;justify-content:center;background:transparent;border:1px solid var(--color-divider);border-radius:var(--radius-md);cursor:pointer;color:var(--color-text);" style-hover="{background:'var(--color-accent-100)'}">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="18" x2="20" y2="18"/></svg>
+    </button>
+
+    <a href="#" onClick="{{ preventDefault }}" style="display:flex;align-items:center;gap:var(--space-2);text-decoration:none;color:var(--color-text);flex-shrink:0;">
+      <div style="width:32px;height:32px;border-radius:var(--radius-md);background:var(--color-accent);display:flex;align-items:center;justify-content:center;color:#fff;">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 4 5v6c0 5.5 3.5 9 8 11 4.5-2 8-5.5 8-11V5z"/></svg>
+      </div>
+      <span style="font-family:var(--font-heading);font-weight:600;font-size:20px;letter-spacing:0.01em;">OPA Community</span>
+    </a>
+
+    <div style="flex:1;max-width:420px;position:relative;">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="position:absolute;left:11px;top:50%;transform:translateY(-50%);color:var(--color-neutral-600);"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <input class="input" placeholder="Search the community…" value="{{ search }}" onChange="{{ onSearchChange }}" style="padding-left:34px;height:40px;width:100%;border-radius:var(--radius-md);background:var(--color-surface);font-size:15px;" />
+    </div>
+
+    <div style="flex:1;"></div>
+
+    <button onClick="{{ preventDefault }}" aria-label="Notifications" style="position:relative;width:34px;height:34px;display:flex;align-items:center;justify-content:center;background:transparent;border:1px solid var(--color-divider);border-radius:var(--radius-md);cursor:pointer;color:var(--color-text);flex-shrink:0;" style-hover="{background:'var(--color-accent-100)'}">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 4 1.5 6 2 7H4c.5-1 2-3 2-7"/><path d="M9.5 17a2.5 2.5 0 0 0 5 0"/></svg>
+      <span style="position:absolute;top:-4px;right:-4px;min-width:16px;height:16px;padding:0 3px;background:#c76b62;border-radius:999px;color:#fff;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;">6</span>
+    </button>
+
+    <button onClick="{{ preventDefault }}" aria-label="Messages" style="width:34px;height:34px;display:flex;align-items:center;justify-content:center;background:transparent;border:1px solid var(--color-divider);border-radius:var(--radius-md);cursor:pointer;color:var(--color-text);flex-shrink:0;" style-hover="{background:'var(--color-accent-100)'}">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16v12H8l-4 4z"/></svg>
+    </button>
+
+    <div style="position:relative;flex-shrink:0;">
+      <button onClick="{{ toggleUserMenu }}" style="display:flex;align-items:center;gap:var(--space-2);background:transparent;border:none;cursor:pointer;padding:0 0 0 var(--space-2);color:var(--color-text);">
+        <div style="width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#7d6fa8,#5980a6);display:flex;align-items:center;justify-content:center;font-family:var(--font-heading);font-weight:600;font-size:13px;color:#fff;">DL</div>
+        <span style="font-size:15px;font-weight:500;">Dana</span>
+      </button>
+      <sc-if value="{{ userMenuOpen }}" hint-placeholder-val="{{ false }}">
+        <div style="position:absolute;right:0;top:44px;width:200px;padding:0;z-index:60;background:var(--color-surface);border:1px solid var(--color-divider);border-radius:var(--radius-lg);box-shadow:var(--shadow-md);overflow:hidden;">
+          <div style="padding:var(--space-3);border-bottom:1px solid var(--color-divider);">
+            <p style="margin:0;font-size:14.5px;font-weight:600;">Dana Lindqvist</p>
+            <p style="margin:0;font-size:13px;color:var(--color-neutral-600);">dana.lindqvist@opa.community</p>
+          </div>
+          <div style="padding:var(--space-2);display:grid;gap:2px;">
+            <button onClick="{{ preventDefault }}" style="display:flex;align-items:center;gap:var(--space-2);padding:var(--space-2);background:transparent;border:none;border-radius:var(--radius-sm);text-align:left;cursor:pointer;font-size:14.5px;color:var(--color-text);" style-hover="{background:'var(--color-accent-100)'}">My Profile</button>
+            <button onClick="{{ preventDefault }}" style="display:flex;align-items:center;gap:var(--space-2);padding:var(--space-2);background:transparent;border:none;border-radius:var(--radius-sm);text-align:left;cursor:pointer;font-size:14.5px;color:var(--color-text);" style-hover="{background:'var(--color-accent-100)'}">Settings</button>
+            <button onClick="{{ preventDefault }}" style="display:flex;align-items:center;gap:var(--space-2);padding:var(--space-2);background:transparent;border:none;border-radius:var(--radius-sm);text-align:left;cursor:pointer;font-size:14.5px;color:#c76b62;" style-hover="{background:'var(--color-accent-100)'}">Sign out</button>
+          </div>
+        </div>
+      </sc-if>
+    </div>
+  </header>
+
+  <!-- ── Body ───────────────────────────────────────────────── -->
+  <div style="flex:1;display:flex;min-height:0;">
+
+    <!-- Sidebar -->
+    <aside style="{{ sidebarStyle }}">
+      <div style="width:230px;height:100%;overflow-y:auto;padding:var(--space-4) var(--space-2);display:flex;flex-direction:column;">
+        <div style="flex:1;">
+          <button onClick="{{ nav.dashboard.onClick }}" style="{{ nav.dashboard.style }}">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/></svg>
+            <span>Dashboard</span>
+          </button>
+
+          <p style="margin:var(--space-4) 0 var(--space-1) var(--space-3);font-size:11.5px;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:var(--color-neutral-600);">Discover</p>
+          <button onClick="{{ nav.events.onClick }}" style="{{ nav.events.style }}"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="17" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="16" y1="2" x2="16" y2="6"/></svg><span>Events</span></button>
+          <button onClick="{{ nav.blog.onClick }}" style="{{ nav.blog.style }}"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11a9 9 0 0 1 9 9"/><path d="M4 4a16 16 0 0 1 16 16"/><circle cx="5" cy="19" r="1"/></svg><span>Blog</span></button>
+          <button onClick="{{ nav.tags.onClick }}" style="{{ nav.tags.style }}"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="9" x2="20" y2="9"/><line x1="4" y1="15" x2="20" y2="15"/><line x1="10" y1="3" x2="8" y2="21"/><line x1="16" y1="3" x2="14" y2="21"/></svg><span>Tags</span></button>
+          <button onClick="{{ nav.members.onClick }}" style="{{ nav.members.style }}"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.2"/><path d="M3 20c0-3.5 2.8-6 6-6s6 2.5 6 6"/><circle cx="17.5" cy="8.5" r="2.6"/><path d="M15.5 14a5.2 5.2 0 0 1 5 6"/></svg><span>Member Directory</span></button>
+
+          <p style="margin:var(--space-4) 0 var(--space-1) var(--space-3);font-size:11.5px;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:var(--color-neutral-600);">Resources</p>
+          <button onClick="{{ nav.case_studies.onClick }}" style="{{ nav.case_studies.style }}"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2h9l3 3v17H6z"/><line x1="9" y1="9" x2="15" y2="9"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="13" y2="17"/></svg><span>Case Studies</span></button>
+          <button onClick="{{ nav.benchmarking.onClick }}" style="{{ nav.benchmarking.style }}"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="20" x2="20" y2="20"/><rect x="6" y="12" width="3" height="8"/><rect x="11" y="7" width="3" height="13"/><rect x="16" y="3" width="3" height="17"/></svg><span>Benchmarking</span></button>
+          <button onClick="{{ nav.consulting.onClick }}" style="{{ nav.consulting.style }}"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg><span>Consulting</span></button>
+
+          <p style="margin:var(--space-4) 0 var(--space-1) var(--space-3);font-size:11.5px;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:var(--color-neutral-600);">My Space</p>
+          <button onClick="{{ nav.profile.onClick }}" style="{{ nav.profile.style }}"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8"/></svg><span>My Profile</span></button>
+          <button onClick="{{ nav.connections.onClick }}" style="{{ nav.connections.style }}"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="8" r="3.2"/><circle cx="17" cy="14" r="3.2"/><path d="M8 11.2V21"/><path d="M4 21c0-3 1.8-5.2 4-5.6"/><path d="M13 21c0-2.8 1.8-4.8 4-5.2"/></svg><span>My Connections</span></button>
+          <button onClick="{{ nav.messages.onClick }}" style="{{ nav.messages.style }}"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16v12H8l-4 4z"/></svg><span style="flex:1;text-align:left;">Messages</span><span style="font-size:10.5px;padding:2px 7px;border-radius:999px;background:#c76b62;color:#fff;">2</span></button>
+          <button onClick="{{ nav.activity.onClick }}" style="{{ nav.activity.style }}"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l4 2"/></svg><span>Activity Feed</span></button>
+
+          <sc-if value="{{ showAdminNav }}" hint-placeholder-val="{{ true }}">
+            <p style="margin:var(--space-4) 0 var(--space-1) var(--space-3);font-size:11.5px;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:var(--color-neutral-600);">Admin</p>
+            <button onClick="{{ nav.admin.onClick }}" style="{{ nav.admin.style }}"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 4 5v6c0 5.5 3.5 9 8 11 4.5-2 8-5.5 8-11V5z"/></svg><span>Administration</span></button>
+          </sc-if>
+        </div>
+
+        <div style="border-top:1px solid var(--color-divider);padding-top:var(--space-2);">
+          <button onClick="{{ nav.settings.onClick }}" style="{{ nav.settings.style }}"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.87l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.7 1.7 0 0 0-1.87-.34 1.7 1.7 0 0 0-1 1.55V21a2 2 0 1 1-4 0v-.09A1.7 1.7 0 0 0 9 19.4a1.7 1.7 0 0 0-1.87.34l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.7 1.7 0 0 0 4.6 15a1.7 1.7 0 0 0-1.55-1H3a2 2 0 1 1 0-4h.09A1.7 1.7 0 0 0 4.6 9a1.7 1.7 0 0 0-.34-1.87l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.7 1.7 0 0 0 9 4.6a1.7 1.7 0 0 0 1-1.55V3a2 2 0 1 1 4 0v.09A1.7 1.7 0 0 0 15 4.6a1.7 1.7 0 0 0 1.87-.34l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.7 1.7 0 0 0 19.4 9a1.7 1.7 0 0 0 1.55 1H21a2 2 0 1 1 0 4h-.09a1.7 1.7 0 0 0-1.55 1z"/></svg><span>Account Settings</span></button>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main -->
+    <main style="flex:1;min-width:0;overflow-y:auto;">
+      <div style="max-width:1180px;margin:0 auto;padding:var(--space-6) var(--space-6) var(--space-8);display:flex;flex-direction:column;gap:var(--space-6);">
+
+        <!-- Welcome -->
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:var(--space-4);flex-wrap:wrap;">
+          <div>
+            <h1 style="margin:0 0 6px;font-size:34px;">Case Studies</h1>
+            <p style="margin:0;color:var(--color-neutral-700);font-size:15.5px;">Real modernization projects, outcomes and lessons learned.</p>
+          </div>
+          <button type="button" class="btn btn-primary" onClick="{{ preventDefault }}" style="border-radius:var(--radius-md);">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Submit a Case Study
+          </button>
+        </div>
+
+        <!-- Stat strip -->
+        <div style="display:flex;background:var(--color-surface);border:1px solid var(--color-divider);border-radius:var(--radius-lg);box-shadow:var(--shadow-sm);overflow:hidden;">
+          <div style="flex:1;padding:var(--space-4) var(--space-4);display:flex;align-items:center;gap:var(--space-3);">
+            <div style="width:38px;height:38px;flex-shrink:0;border-radius:var(--radius-md);background:#eef4fa;color:#2c4f6e;display:flex;align-items:center;justify-content:center;"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2h9l3 3v17H6z"/><line x1="9" y1="9" x2="15" y2="9"/><line x1="9" y1="13" x2="15" y2="13"/></svg></div>
+            <div style="display:flex;flex-direction:column;gap:2px;">
+              <span style="font-family:var(--font-heading);font-size:26px;font-weight:600;line-height:1;">34</span>
+              <span style="font-size:12.5px;text-transform:uppercase;letter-spacing:0.06em;color:var(--color-neutral-600);">Published</span>
+            </div>
+          </div>
+          <div style="width:1px;background:var(--color-divider);"></div>
+          <div style="flex:1;padding:var(--space-4) var(--space-4);display:flex;align-items:center;gap:var(--space-3);">
+            <div style="width:38px;height:38px;flex-shrink:0;border-radius:var(--radius-md);background:#eaf6f4;color:#2a5650;display:flex;align-items:center;justify-content:center;"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></div>
+            <div style="display:flex;flex-direction:column;gap:2px;">
+              <span style="font-family:var(--font-heading);font-size:26px;font-weight:600;line-height:1;">9</span>
+              <span style="font-size:12.5px;text-transform:uppercase;letter-spacing:0.06em;color:var(--color-neutral-600);">Industries</span>
+            </div>
+          </div>
+          <div style="width:1px;background:var(--color-divider);"></div>
+          <div style="flex:1;padding:var(--space-4) var(--space-4);display:flex;align-items:center;gap:var(--space-3);">
+            <div style="width:38px;height:38px;flex-shrink:0;border-radius:var(--radius-md);background:#f1eef8;color:#4a3d70;display:flex;align-items:center;justify-content:center;"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l4 2"/></svg></div>
+            <div style="display:flex;flex-direction:column;gap:2px;">
+              <span style="font-family:var(--font-heading);font-size:26px;font-weight:600;line-height:1;">2.1 yrs</span>
+              <span style="font-size:12.5px;text-transform:uppercase;letter-spacing:0.06em;color:var(--color-neutral-600);">Avg Payback</span>
+            </div>
+          </div>
+          <div style="width:1px;background:var(--color-divider);"></div>
+          <div style="flex:1;padding:var(--space-4) var(--space-4);display:flex;align-items:center;gap:var(--space-3);">
+            <div style="width:38px;height:38px;flex-shrink:0;border-radius:var(--radius-md);background:#fbf1e4;color:#7a5220;display:flex;align-items:center;justify-content:center;"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v13"/><path d="M7 12l5 5 5-5"/><path d="M5 21h14"/></svg></div>
+            <div style="display:flex;flex-direction:column;gap:2px;">
+              <span style="font-family:var(--font-heading);font-size:26px;font-weight:600;line-height:1;">2,340</span>
+              <span style="font-size:12.5px;text-transform:uppercase;letter-spacing:0.06em;color:var(--color-neutral-600);">Downloads</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Content grid -->
+        <div style="display:flex;gap:var(--space-6);align-items:flex-start;">
+
+          <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:var(--space-3);">
+
+            <!-- Case study list -->
+            <sc-for list="{{ caseStudies }}" as="cs" hint-placeholder-count="5">
+              <div style="display:flex;align-items:stretch;background:var(--color-surface);border:1px solid var(--color-divider);border-radius:var(--radius-lg);box-shadow:var(--shadow-sm);">
+                <div style="width:5px;flex-shrink:0;border-radius:var(--radius-lg) 0 0 var(--radius-lg);background:{{ cs.color.text }};"></div>
+                <div style="flex:1;min-width:0;padding:var(--space-4);display:flex;gap:var(--space-4);align-items:center;">
+                  <div style="flex:1;min-width:0;">
+                    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:4px;">
+                      <span style="{{ cs.tagStyle }}">{{ cs.industry }}</span>
+                      <h4 style="margin:0;font-size:18px;">{{ cs.title }}</h4>
+                    </div>
+                    <p style="margin:0 0 6px;font-size:14.5px;color:var(--color-neutral-700);line-height:1.5;">{{ cs.summary }}</p>
+                    <span style="font-size:13px;color:var(--color-neutral-600);">{{ cs.company }}</span>
+                  </div>
+                  <div style="flex-shrink:0;text-align:center;padding:var(--space-3) var(--space-4);border-left:1px solid var(--color-divider);">
+                    <div style="font-family:var(--font-heading);font-size:22px;font-weight:600;color:{{ cs.color.text }};">{{ cs.outcome }}</div>
+                  </div>
+                </div>
+              </div>
+            </sc-for>
+          </div>
+
+          <!-- Right rail -->
+          <div style="width:300px;flex-shrink:0;display:flex;flex-direction:column;gap:var(--space-4);">
+
+            <div style="background:var(--color-surface);border:1px solid var(--color-divider);border-radius:var(--radius-lg);box-shadow:var(--shadow-sm);overflow:hidden;">
+              <div style="padding:var(--space-3) var(--space-3) 0;font-size:11.5px;letter-spacing:0.08em;text-transform:uppercase;color:var(--color-accent-700);font-weight:600;">Quick Actions</div>
+              <div style="padding:var(--space-2) var(--space-2) var(--space-3);display:grid;gap:2px;">
+                <button onClick="{{ preventDefault }}" style="display:flex;align-items:center;gap:var(--space-2);padding:var(--space-2) var(--space-2);background:transparent;border:none;border-radius:var(--radius-md);text-align:left;cursor:pointer;font-size:14.5px;color:var(--color-text);" style-hover="{background:'var(--color-accent-100)'}"><span style="width:24px;height:24px;border-radius:var(--radius-sm);background:#eef4fa;color:#2c4f6e;display:flex;align-items:center;justify-content:center;flex-shrink:0;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.2"/><path d="M3 20c0-3.5 2.8-6 6-6s6 2.5 6 6"/><circle cx="17.5" cy="8.5" r="2.6"/><path d="M15.5 14a5.2 5.2 0 0 1 5 6"/></svg></span>Member Directory</button>
+                <button onClick="{{ preventDefault }}" style="display:flex;align-items:center;gap:var(--space-2);padding:var(--space-2) var(--space-2);background:transparent;border:none;border-radius:var(--radius-md);text-align:left;cursor:pointer;font-size:14.5px;color:var(--color-text);" style-hover="{background:'var(--color-accent-100)'}"><span style="width:24px;height:24px;border-radius:var(--radius-sm);background:#eaf6f4;color:#2a5650;display:flex;align-items:center;justify-content:center;flex-shrink:0;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg></span>Training Center</button>
+                <button onClick="{{ preventDefault }}" style="display:flex;align-items:center;gap:var(--space-2);padding:var(--space-2) var(--space-2);background:transparent;border:none;border-radius:var(--radius-md);text-align:left;cursor:pointer;font-size:14.5px;color:var(--color-text);" style-hover="{background:'var(--color-accent-100)'}"><span style="width:24px;height:24px;border-radius:var(--radius-sm);background:#f1eef8;color:#4a3d70;display:flex;align-items:center;justify-content:center;flex-shrink:0;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="17" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="16" y1="2" x2="16" y2="6"/></svg></span>Events</button>
+                <button onClick="{{ preventDefault }}" style="display:flex;align-items:center;gap:var(--space-2);padding:var(--space-2) var(--space-2);background:transparent;border:none;border-radius:var(--radius-md);text-align:left;cursor:pointer;font-size:14.5px;color:var(--color-text);" style-hover="{background:'var(--color-accent-100)'}"><span style="width:24px;height:24px;border-radius:var(--radius-sm);background:#fbf1e4;color:#7a5220;display:flex;align-items:center;justify-content:center;flex-shrink:0;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="20" x2="20" y2="20"/><rect x="6" y="12" width="3" height="8"/><rect x="11" y="7" width="3" height="13"/><rect x="16" y="3" width="3" height="17"/></svg></span>Leaderboard</button>
+              </div>
+            </div>
+
+            <div style="background:var(--color-surface);border:1px solid var(--color-divider);border-radius:var(--radius-lg);box-shadow:var(--shadow-sm);overflow:hidden;">
+              <div style="padding:var(--space-3) var(--space-3) 0;font-size:11.5px;letter-spacing:0.08em;text-transform:uppercase;color:var(--color-accent-700);font-weight:600;">Top Contributors</div>
+              <div style="padding:var(--space-2) var(--space-3) var(--space-3);display:flex;flex-direction:column;gap:var(--space-2);">
+                <sc-for list="{{ contributors }}" as="c" hint-placeholder-count="5">
+                  <div style="display:flex;align-items:center;gap:var(--space-2);">
+                    <span style="width:18px;font-size:12.5px;font-weight:700;color:var(--color-neutral-600);">{{ c.rank }}</span>
+                    <div style="width:26px;height:26px;border-radius:50%;background:{{ c.avatarBg }};display:flex;align-items:center;justify-content:center;font-family:var(--font-heading);font-weight:600;font-size:11px;color:#fff;flex-shrink:0;">{{ c.initials }}</div>
+                    <span style="flex:1;font-size:14.5px;font-weight:500;">{{ c.name }}</span>
+                    <span style="font-size:11.5px;font-weight:600;padding:3px 9px;border-radius:999px;background:var(--color-neutral-100);color:var(--color-neutral-800);">{{ c.reputation }}</span>
+                  </div>
+                </sc-for>
+                <a href="#" onClick="{{ preventDefault }}" style="display:block;text-align:center;font-size:13.5px;margin-top:4px;text-decoration:none;">View full leaderboard →</a>
+              </div>
+            </div>
+
+            <div style="background:var(--color-surface);border:1px solid var(--color-divider);border-radius:var(--radius-lg);box-shadow:var(--shadow-sm);overflow:hidden;">
+              <div style="padding:var(--space-3) var(--space-3) 0;font-size:11.5px;letter-spacing:0.08em;text-transform:uppercase;color:var(--color-accent-700);font-weight:600;">Notifications</div>
+              <div style="padding:var(--space-2) var(--space-3) var(--space-3);display:flex;flex-direction:column;gap:var(--space-3);">
+                <sc-for list="{{ notifications }}" as="n" hint-placeholder-count="3">
+                  <div style="display:flex;gap:var(--space-2);align-items:flex-start;">
+                    <div style="width:6px;height:6px;border-radius:50%;background:#5980a6;margin-top:6px;flex-shrink:0;"></div>
+                    <div style="min-width:0;">
+                      <p style="margin:0;font-size:14px;line-height:1.45;">{{ n.text }}</p>
+                      <p style="margin:4px 0 0;font-size:12px;color:var(--color-neutral-600);">{{ n.time }}</p>
+                    </div>
+                  </div>
+                </sc-for>
+                <a href="#" onClick="{{ preventDefault }}" style="display:block;text-align:center;font-size:13.5px;margin-top:2px;text-decoration:none;">View all notifications →</a>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;sidebarDefaultOpen&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Layout&quot;},&quot;showAdminNav&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Layout&quot;}}">
+const CATEGORY_COLORS = {
+  'Architecture & Modernization': { bg: '#eef4fa', text: '#2c4f6e', stripe: '#5980a6' },
+  'Technical Guides': { bg: '#eaf6f4', text: '#2a5650', stripe: '#4f9b93' },
+  'Business & Strategy': { bg: '#f1eef8', text: '#4a3d70', stripe: '#7d6fa8' },
+  'Community Discussions': { bg: '#fbeeec', text: '#7a3830', stripe: '#c76b62' },
+  'Reference': { bg: '#fbf1e4', text: '#7a5220', stripe: '#c98a3e' },
+};
+
+const AVATAR_COLORS = ['#5980a6', '#4f9b93', '#7d6fa8', '#c98a3e', '#c76b62'];
+
+const INDUSTRY_COLORS = {
+  Refining: { bg: '#eef4fa', text: '#2c4f6e' }, Chemicals: { bg: '#eaf6f4', text: '#2a5650' },
+  'Pulp & Paper': { bg: '#f1eef8', text: '#4a3d70' }, 'Power Generation': { bg: '#fbf1e4', text: '#7a5220' },
+  'Food & Beverage': { bg: '#fbeeec', text: '#7a3830' },
+};
+const ALL_CASE_STUDIES = [
+  { title: 'Cutting Unplanned Downtime by a Third', industry: 'Refining', outcome: '-32% downtime', company: 'Gulf Coast Refining · mid-size refinery', summary: 'A phased O-PAS migration across three production units cut unplanned downtime without a full shutdown window.' },
+  { title: 'Consolidating Five DCS Platforms into One', industry: 'Chemicals', outcome: '5→1 platforms', company: 'Northfield Chemicals · specialty chemicals', summary: 'A multi-site standardization program replaced five legacy control platforms with a single portable architecture.' },
+  { title: 'Faster Vendor Onboarding After Going Portable', industry: 'Pulp & Paper', outcome: '-60% onboarding', company: 'Riverline Paper Co. · integrated mill', summary: 'Switching to portable control software cut the time to bring a new systems integrator up to speed.' },
+  { title: 'A Two-Year Payback on Modernization Capex', industry: 'Power Generation', outcome: '2.0 yr payback', company: 'Meridian Power · combined-cycle plant', summary: 'Avoided downtime and reduced engineering hours delivered payback well ahead of the original five-year model.' },
+  { title: 'Standardizing Alarms Across Six Plants', industry: 'Food & Beverage', outcome: '-40% nuisance alarms', company: 'Harvest Foods Group · multi-site producer', summary: 'A shared alarm philosophy rolled out across six plants reduced nuisance alarms and operator fatigue.' },
+];
+
+const ALL_DISCUSSIONS = [
+  { id: 1, title: 'Planning a phased DCS-to-O-PAS migration', excerpt: 'Looking for war stories on staging a migration across three production units without a full shutdown window. What sequencing worked for you?', category: 'Architecture & Modernization', tags: ['migration', 'dcs', 'o-pas'], author: 'Marcus Webb', views: 412, replies: 28, time: '2h ago', pinned: true, locked: false, solved: false, video: false },
+  { id: 2, title: 'Best practices for control software portability testing', excerpt: 'We built a conformance checklist for validating portable control modules across vendor runtimes. Sharing it here for feedback.', category: 'Technical Guides', tags: ['portability', 'testing'], author: 'Priya Nair', views: 265, replies: 14, time: '5h ago', pinned: false, locked: false, solved: false, video: false },
+  { id: 3, title: 'ROI modeling for modernization projects: what numbers matter', excerpt: 'Finance wants a payback period under three years. Here is the model we used, including avoided downtime and vendor lock-in savings.', category: 'Business & Strategy', tags: ['roi', 'capex'], author: 'Sam Okafor', views: 530, replies: 41, time: '1d ago', pinned: false, locked: false, solved: true, video: false },
+  { id: 4, title: 'Anyone attending the fall interoperability workshop?', excerpt: 'Recorded a short walkthrough of the demo floor from last year in case it helps people decide whether to travel this time.', category: 'Community Discussions', tags: ['events'], author: 'Tomas Berg', views: 189, replies: 9, time: '1d ago', pinned: false, locked: false, solved: false, video: true },
+  { id: 5, title: 'O-PAS glossary: profiles vs conformance vs certification', excerpt: 'A plain-language pass at three terms that get used interchangeably but mean very different things in the standard.', category: 'Reference', tags: ['glossary', 'o-pas'], author: 'Elena Ruiz', views: 340, replies: 6, time: '2d ago', pinned: false, locked: false, solved: false, video: false },
+  { id: 6, title: 'Cybersecurity considerations when opening up the architecture', excerpt: 'Locking this thread since it is now covered by the working group\u2019s official guidance document, linked in the pinned post above.', category: 'Architecture & Modernization', tags: ['cybersecurity'], author: 'Elena Ruiz', views: 298, replies: 22, time: '3d ago', pinned: false, locked: true, solved: false, video: false },
+];
+
+const CONTRIBUTORS = [
+  { rank: 1, name: 'Elena Ruiz', initials: 'ER', reputation: 1240 },
+  { rank: 2, name: 'Marcus Webb', initials: 'MW', reputation: 980 },
+  { rank: 3, name: 'Priya Nair', initials: 'PN', reputation: 845 },
+  { rank: 4, name: 'Sam Okafor', initials: 'SO', reputation: 710 },
+  { rank: 5, name: 'Tomas Berg', initials: 'TB', reputation: 655 },
+].map((c, i) => ({ ...c, avatarBg: AVATAR_COLORS[i % AVATAR_COLORS.length] }));
+
+const NOTIFICATIONS = [
+  { text: 'Marcus Webb replied to your discussion on DCS migration.', time: '12m ago' },
+  { text: 'New event: Fall Interoperability Workshop registration is open.', time: '3h ago' },
+  { text: 'Priya Nair mentioned you in Cybersecurity considerations.', time: '1d ago' },
+];
+
+const NAV_HREFS = {
+  dashboard: 'Dashboard.dc.html', events: 'Events.dc.html', blog: 'Blog.dc.html', tags: 'Tags.dc.html', members: 'MemberDirectory.dc.html',
+  case_studies: 'CaseStudies.dc.html', benchmarking: 'Benchmarking.dc.html', consulting: 'Consulting.dc.html',
+  profile: 'MyProfile.dc.html', connections: 'MyConnections.dc.html', messages: 'Messages.dc.html', activity: 'ActivityFeed.dc.html',
+  admin: 'Admin.dc.html', settings: 'AccountSettings.dc.html',
+};
+class Component extends DCLogic {
+  pageKey = 'case_studies';
+  state = {
+    sidebarOpen: this.props.sidebarDefaultOpen ?? true,
+    userMenuOpen: false,
+    activeNav: 'dashboard',
+    search: '',
+    category: 'all',
+  };
+
+  toggleSidebar = () => this.setState(s => ({ sidebarOpen: !s.sidebarOpen }));
+  toggleUserMenu = () => this.setState(s => ({ userMenuOpen: !s.userMenuOpen }));
+  navTo = (key) => () => { const href = NAV_HREFS[key]; if (href) window.location.href = href; };
+  preventDefault = (e) => e && e.preventDefault && e.preventDefault();
+  onSearchChange = (e) => this.setState({ search: e.target.value });
+  onCategoryChange = (e) => this.setState({ category: e.target.value });
+
+  itemStyle(key) {
+    const active = this.pageKey === key;
+    return {
+      width: '100%', display: 'flex', alignItems: 'center', gap: 'var(--space-2)',
+      padding: 'var(--space-2) var(--space-3)', marginBottom: '1px', borderRadius: 'var(--radius-md)',
+      background: active ? 'var(--color-accent)' : 'transparent',
+      color: active ? '#fff' : 'var(--color-text)', border: 'none', cursor: 'pointer',
+      fontSize: '15px', fontWeight: active ? 600 : 400, textAlign: 'left',
+    };
+  }
+
+  buildNav() {
+    const keys = ['dashboard', 'events', 'blog', 'tags', 'members', 'case-studies', 'benchmarking', 'consulting', 'profile', 'connections', 'messages', 'activity', 'admin', 'settings'];
+    const nav = {};
+    for (const key of keys) {
+      const safeKey = key.replace(/-/g, '_');
+      nav[safeKey] = { style: this.itemStyle(safeKey), onClick: this.navTo(safeKey) };
+    }
+    return nav;
+  }
+
+  renderVals() {
+    const q = this.state.search.trim().toLowerCase();
+    const discussions = ALL_DISCUSSIONS.filter(d => {
+      const matchCat = this.state.category === 'all' || d.category === this.state.category;
+      const matchQ = !q || d.title.toLowerCase().includes(q) || d.excerpt.toLowerCase().includes(q);
+      return matchCat && matchQ;
+    }).map(d => {
+      const c = CATEGORY_COLORS[d.category];
+      return {
+        ...d,
+        stripe: c.stripe,
+        categoryTagStyle: { display: 'inline-flex', alignItems: 'center', fontSize: '10px', fontWeight: 600, padding: '3px 9px', borderRadius: '999px', background: c.bg, color: c.text },
+      };
+    });
+    return {
+      sidebarStyle: {
+        flexShrink: 0, background: 'var(--color-bg)', borderRight: '1px solid var(--color-divider)',
+        width: this.state.sidebarOpen ? '230px' : '0px', overflow: 'hidden', transition: 'width 0.18s ease',
+      },
+      userMenuOpen: this.state.userMenuOpen,
+      toggleSidebar: this.toggleSidebar,
+      toggleUserMenu: this.toggleUserMenu,
+      preventDefault: this.preventDefault,
+      search: this.state.search,
+      onSearchChange: this.onSearchChange,
+      category: this.state.category,
+      onCategoryChange: this.onCategoryChange,
+      nav: this.buildNav(),
+      showAdminNav: this.props.showAdminNav ?? true,
+      caseStudies: ALL_CASE_STUDIES.map(cs => {
+        const c = INDUSTRY_COLORS[cs.industry];
+        return { ...cs, color: c, tagStyle: { display: 'inline-flex', alignItems: 'center', fontSize: '10px', fontWeight: 600, padding: '3px 9px', borderRadius: '999px', background: c.bg, color: c.text } };
+      }),
+      discussions,
+      noResults: discussions.length === 0,
+      contributors: CONTRIBUTORS,
+      notifications: NOTIFICATIONS,
+    };
+  }
+}
+</script>
+</body>
+</html>
