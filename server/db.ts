@@ -8,6 +8,7 @@ import {
   migrationPlans, rfpDocuments,
   forumCategories, discussions, forumPosts, forumGroups, groupMembers, groupJoinRequests, directMessages, forumNotifications, userProfiles,
   memberFollows, memberBadges, activityLog, activityReactions, connectionRequests, pointsTransactions, groupAnnouncements,
+  documentFolders, documents, profileFieldDefinitions, profileFieldValues,
   blogPosts,
   events, eventRsvps,
   courses, courseEnrollments, lessons, lessonProgress,
@@ -930,17 +931,28 @@ export async function getForumPostsByDiscussion(discussionId: number) {
     .orderBy(forumPosts.createdAt);
 }
 
-export async function createForumGroup(data: { name: string; slug: string; description?: string; creatorId: number; isPrivate?: boolean }) {
+export async function createForumGroup(data: { name: string; slug: string; description?: string; creatorId: number; visibility?: "public" | "private" | "secret" }) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
   const result = await db.insert(forumGroups).values(data);
   return result;
 }
 
-export async function getForumGroups(limit = 20, offset = 0) {
+export async function getForumGroups(limit = 20, offset = 0, requestingUserId?: number) {
   const db = await getDb();
   if (!db) return [];
-  return db.select().from(forumGroups).orderBy(desc(forumGroups.createdAt)).limit(limit).offset(offset);
+  // Secret groups never appear in listings unless the requester is already
+  // a member — that's the whole point of "secret" vs "private" (both
+  // require approval to join; only secret is also hidden from browsing).
+  let memberGroupIds: number[] = [];
+  if (requestingUserId) {
+    const rows = await db.select({ groupId: groupMembers.groupId }).from(groupMembers).where(eq(groupMembers.userId, requestingUserId));
+    memberGroupIds = rows.map(r => r.groupId);
+  }
+  const visible = memberGroupIds.length > 0
+    ? or(sql`${forumGroups.visibility} != 'secret'`, inArray(forumGroups.id, memberGroupIds))
+    : sql`${forumGroups.visibility} != 'secret'`;
+  return db.select().from(forumGroups).where(visible).orderBy(desc(forumGroups.createdAt)).limit(limit).offset(offset);
 }
 
 export async function joinForumGroup(groupId: number, userId: number) {
@@ -948,10 +960,11 @@ export async function joinForumGroup(groupId: number, userId: number) {
   if (!db) throw new Error("Database not available");
   const [group] = await db.select().from(forumGroups).where(eq(forumGroups.id, groupId)).limit(1);
   if (!group) throw new Error("Group not found");
-  if (group.isPrivate) {
-    // Private groups require approval — don't add membership yet.
-    // Requesting twice while a request is still pending is a no-op rather
-    // than an error, so a member re-clicking "Join" doesn't see a scary failure.
+  if (group.visibility !== "public") {
+    // Private and secret groups both require approval — don't add
+    // membership yet. Requesting twice while a request is still pending is
+    // a no-op rather than an error, so a member re-clicking "Join" doesn't
+    // see a scary failure.
     const [existing] = await db.select().from(groupJoinRequests)
       .where(and(eq(groupJoinRequests.groupId, groupId), eq(groupJoinRequests.userId, userId), eq(groupJoinRequests.status, "pending")))
       .limit(1);
@@ -1106,6 +1119,122 @@ export async function getMutualConnections(userId: number) {
   return rows
     .map(r => ({ request: r, otherUser: byId.get(r.requesterId === userId ? r.recipientId : r.requesterId) }))
     .filter(r => r.otherUser);
+}
+
+// ─── Document Library ────────────────────────────────────────────────
+// A club/group admin check, reused from the group join-request work — any
+// group admin/moderator can manage that group's folders/documents.
+// Club-wide (groupId null) folders/documents are admin-only (site role).
+async function assertCanManageDocuments(db: any, requesterRole: "user" | "admin", groupId: number | null | undefined, requesterId: number) {
+  if (groupId == null) {
+    if (requesterRole !== "admin") throw new Error("Not authorized — club-wide documents are admin-managed");
+    return;
+  }
+  await assertGroupAdminOrModerator(db, groupId, requesterId);
+}
+
+export async function createDocumentFolder(data: { groupId?: number; parentFolderId?: number; name: string; createdBy: number; requesterRole: "user" | "admin" }) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await assertCanManageDocuments(db, data.requesterRole, data.groupId, data.createdBy);
+  const result = await db.insert(documentFolders).values({ groupId: data.groupId, parentFolderId: data.parentFolderId, name: data.name, createdBy: data.createdBy });
+  return result;
+}
+
+export async function listDocumentFolders(opts: { groupId?: number; parentFolderId?: number }) {
+  const db = await getDb();
+  if (!db) return [];
+  const conditions = [] as any[];
+  conditions.push(opts.groupId != null ? eq(documentFolders.groupId, opts.groupId) : sql`${documentFolders.groupId} IS NULL`);
+  conditions.push(opts.parentFolderId != null ? eq(documentFolders.parentFolderId, opts.parentFolderId) : sql`${documentFolders.parentFolderId} IS NULL`);
+  return db.select().from(documentFolders).where(and(...conditions)).orderBy(documentFolders.name);
+}
+
+export async function createDocument(data: {
+  folderId?: number; groupId?: number; title: string; description?: string;
+  fileKey: string; url: string; mimeType: string; sizeBytes: number; uploadedBy: number; requesterRole: "user" | "admin";
+}) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await assertCanManageDocuments(db, data.requesterRole, data.groupId, data.uploadedBy);
+  const result = await db.insert(documents).values(data);
+  return result;
+}
+
+export async function listDocuments(opts: { groupId?: number; folderId?: number }) {
+  const db = await getDb();
+  if (!db) return [];
+  const conditions = [] as any[];
+  conditions.push(opts.groupId != null ? eq(documents.groupId, opts.groupId) : sql`${documents.groupId} IS NULL`);
+  conditions.push(opts.folderId != null ? eq(documents.folderId, opts.folderId) : sql`${documents.folderId} IS NULL`);
+  return db.select().from(documents).where(and(...conditions)).orderBy(desc(documents.createdAt));
+}
+
+export async function deleteDocument(documentId: number, requesterId: number, requesterRole: "user" | "admin") {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const [doc] = await db.select().from(documents).where(eq(documents.id, documentId)).limit(1);
+  if (!doc) throw new Error("Document not found");
+  await assertCanManageDocuments(db, requesterRole, doc.groupId, requesterId);
+  await db.delete(documents).where(eq(documents.id, documentId));
+  return { success: true };
+}
+
+// ─── Custom Profile Fields ───────────────────────────────────────────
+export async function listProfileFieldDefinitions() {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(profileFieldDefinitions).orderBy(profileFieldDefinitions.sortOrder);
+}
+
+export async function createProfileFieldDefinition(data: { fieldKey: string; label: string; fieldType: "text" | "textarea" | "select" | "url" | "date" | "number"; options?: string[]; isRequired?: boolean; sortOrder?: number }) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const result = await db.insert(profileFieldDefinitions).values(data);
+  return result;
+}
+
+export async function updateProfileFieldDefinition(id: number, data: Partial<{ label: string; fieldType: "text" | "textarea" | "select" | "url" | "date" | "number"; options: string[]; isRequired: boolean; sortOrder: number }>) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.update(profileFieldDefinitions).set(data).where(eq(profileFieldDefinitions.id, id));
+  return { success: true };
+}
+
+export async function deleteProfileFieldDefinition(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  // Remove any stored values for this field too, or they'd be orphaned
+  // pointing at a fieldDefinitionId that no longer exists.
+  await db.delete(profileFieldValues).where(eq(profileFieldValues.fieldDefinitionId, id));
+  await db.delete(profileFieldDefinitions).where(eq(profileFieldDefinitions.id, id));
+  return { success: true };
+}
+
+export async function getProfileFieldValues(userId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select({
+    value: profileFieldValues,
+    definition: profileFieldDefinitions,
+  }).from(profileFieldValues)
+    .innerJoin(profileFieldDefinitions, eq(profileFieldValues.fieldDefinitionId, profileFieldDefinitions.id))
+    .where(eq(profileFieldValues.userId, userId))
+    .orderBy(profileFieldDefinitions.sortOrder);
+}
+
+export async function setProfileFieldValue(userId: number, fieldDefinitionId: number, value: string) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const [existing] = await db.select().from(profileFieldValues)
+    .where(and(eq(profileFieldValues.userId, userId), eq(profileFieldValues.fieldDefinitionId, fieldDefinitionId)))
+    .limit(1);
+  if (existing) {
+    await db.update(profileFieldValues).set({ value }).where(eq(profileFieldValues.id, existing.id));
+  } else {
+    await db.insert(profileFieldValues).values({ userId, fieldDefinitionId, value });
+  }
+  return { success: true };
 }
 
 
