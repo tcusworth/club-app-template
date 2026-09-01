@@ -329,7 +329,12 @@ export const forumGroups = mysqlTable("forum_groups", {
   slug: varchar("slug", { length: 128 }).notNull().unique(),
   description: text("description"),
   creatorId: int("creatorId").notNull(),
-  isPrivate: boolean("isPrivate").default(false).notNull(),
+  // "public": listed, join instantly. "private": listed, join requires
+  // admin/moderator approval. "secret": NOT listed in any group directory —
+  // only reachable via direct link, and joining still requires approval.
+  // Replaces the old isPrivate boolean (public/private only) with a third
+  // tier, added for the club-app whitelisting work.
+  visibility: mysqlEnum("visibility", ["public", "private", "secret"]).default("public").notNull(),
   memberCount: int("memberCount").default(1).notNull(),
   avatarUrl: varchar("avatarUrl", { length: 2048 }),
   coverImageUrl: varchar("coverImageUrl", { length: 2048 }),
@@ -386,6 +391,69 @@ export const activityReactions = mysqlTable("activity_reactions", {
 
 export type ActivityReaction = typeof activityReactions.$inferSelect;
 export type InsertActivityReaction = typeof activityReactions.$inferInsert;
+
+// ─── Document Library ────────────────────────────────────────────────
+// Deliberately a separate table from mediaAttachments rather than
+// overloading it — mediaAttachments is tightly coupled to contentNodeId/
+// projectId elsewhere in the app; keeping this separate means zero risk of
+// disturbing that existing behavior. Reuses the same R2/S3 upload plumbing
+// (storagePut etc.) at the server layer, just its own metadata table.
+export const documentFolders = mysqlTable("document_folders", {
+  id: int("id").autoincrement().primaryKey(),
+  groupId: int("groupId"), // null = club-wide (not scoped to a group)
+  parentFolderId: int("parentFolderId"), // null = root folder
+  name: varchar("name", { length: 256 }).notNull(),
+  createdBy: int("createdBy").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+export type DocumentFolder = typeof documentFolders.$inferSelect;
+export type InsertDocumentFolder = typeof documentFolders.$inferInsert;
+
+export const documents = mysqlTable("documents", {
+  id: int("id").autoincrement().primaryKey(),
+  folderId: int("folderId"), // null = sits at library root
+  groupId: int("groupId"), // null = club-wide, visible to all members
+  title: varchar("title", { length: 256 }).notNull(),
+  description: text("description"),
+  fileKey: varchar("fileKey", { length: 1024 }).notNull(),
+  url: varchar("url", { length: 2048 }).notNull(),
+  mimeType: varchar("mimeType", { length: 128 }).notNull(),
+  sizeBytes: int("sizeBytes"),
+  uploadedBy: int("uploadedBy").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+export type LibraryDocument = typeof documents.$inferSelect;
+export type InsertLibraryDocument = typeof documents.$inferInsert;
+
+// ─── Custom Profile Fields ───────────────────────────────────────────
+// Admin-configurable fields, in addition to the fixed columns already on
+// userProfiles (bio, company, jobTitle, location, website). Separate
+// definition + value tables (rather than a JSON blob on userProfiles) so
+// field types, required-ness, and ordering can be managed and validated
+// server-side without a schema migration every time a club wants a new field.
+export const profileFieldDefinitions = mysqlTable("profile_field_definitions", {
+  id: int("id").autoincrement().primaryKey(),
+  fieldKey: varchar("fieldKey", { length: 64 }).notNull().unique(), // stable identifier, e.g. "t_shirt_size"
+  label: varchar("label", { length: 128 }).notNull(), // display label, e.g. "T-Shirt Size"
+  fieldType: mysqlEnum("fieldType", ["text", "textarea", "select", "url", "date", "number"]).default("text").notNull(),
+  options: json("options").$type<string[]>(), // choices, only used when fieldType === "select"
+  isRequired: boolean("isRequired").default(false).notNull(),
+  sortOrder: int("sortOrder").default(0).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+export type ProfileFieldDefinition = typeof profileFieldDefinitions.$inferSelect;
+export type InsertProfileFieldDefinition = typeof profileFieldDefinitions.$inferInsert;
+
+export const profileFieldValues = mysqlTable("profile_field_values", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  fieldDefinitionId: int("fieldDefinitionId").notNull(),
+  value: text("value"),
+}, (table) => ({
+  userFieldUnique: unique("profile_field_values_user_field_unique").on(table.userId, table.fieldDefinitionId),
+}));
+export type ProfileFieldValue = typeof profileFieldValues.$inferSelect;
+export type InsertProfileFieldValue = typeof profileFieldValues.$inferInsert;
 
 export const directMessages = mysqlTable("direct_messages", {
   id: int("id").autoincrement().primaryKey(),
