@@ -46,6 +46,7 @@ import SignIn from "./pages/SignIn";
 import Register from "./pages/Register";
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
+import MagicLinkVerify from "./pages/MagicLinkVerify";
 import { FEATURES } from "@/lib/clubConfig";
 import { useAuth } from "./_core/hooks/useAuth";
 
