@@ -9,6 +9,11 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { HoverCard, HoverCardContent, HoverCardTrigger } from '@/components/ui/hover-card';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
 import { VerifiedBadge } from '@/components/VerifiedBadge';
 import { StatStrip } from '@/components/dashboard/StatStrip';
@@ -18,7 +23,7 @@ import {
   UserPlus, UserMinus, MessageCircle, MapPin, Building2, Link2,
   Award, TrendingUp, Users, MessageSquare, Activity, Star, Shield,
   CheckCircle, Linkedin, BookOpen, Layers, PenLine, ArrowRight, Globe, ChevronRight,
-  Hash, ExternalLink, BarChart2, Crown, Zap,
+  Hash, ExternalLink, BarChart2, Crown, Zap, Pencil,
 } from 'lucide-react';
 
 const ROLE_LABELS: Record<string, string> = {
@@ -190,6 +195,8 @@ interface MemberProfileProps {
 export default function MemberProfile({ userId }: MemberProfileProps) {
   const { user: currentUser } = useAuth();
   const [isFollowing, setIsFollowing] = useState(false);
+  const [customFieldsDialogOpen, setCustomFieldsDialogOpen] = useState(false);
+  const [customFieldDrafts, setCustomFieldDrafts] = useState<Record<number, string>>({});
 
   const memberQuery = trpc.user.getById.useQuery({ id: userId });
   const badgesQuery = trpc.gamification.getUserBadges.useQuery({ userId });
@@ -197,6 +204,11 @@ export default function MemberProfile({ userId }: MemberProfileProps) {
   const followersQuery = trpc.social.getFollowers.useQuery({ userId, limit: 50 });
   const followingQuery = trpc.social.getFollowing.useQuery({ userId, limit: 50 });
   const activityQuery = trpc.activity.getUserActivityFeed.useQuery({ userId, limit: 20 });
+  const customFieldDefsQuery = trpc.profileFields.list.useQuery();
+  const customFieldValuesQuery = trpc.profileFields.getValues.useQuery({ userId });
+  const utils = trpc.useUtils();
+
+  const setCustomFieldValue = trpc.profileFields.setValue.useMutation();
 
   // Profile tab data
   const discussionsQuery = trpc.profile.getDiscussions.useQuery({ userId, limit: 20 });
@@ -228,6 +240,33 @@ export default function MemberProfile({ userId }: MemberProfileProps) {
   const followers = followersQuery.data || [];
   const following = followingQuery.data || [];
   const activityItems = activityQuery.data || [];
+  const customFieldDefs = customFieldDefsQuery.data || [];
+  const customFieldValues = customFieldValuesQuery.data || [];
+  const customFieldValueByDefId = new Map(customFieldValues.map((v: any) => [v.definition.id, v.value.value]));
+
+  const openCustomFieldsDialog = () => {
+    const drafts: Record<number, string> = {};
+    customFieldDefs.forEach((def: any) => {
+      drafts[def.id] = (customFieldValueByDefId.get(def.id) as string) || "";
+    });
+    setCustomFieldDrafts(drafts);
+    setCustomFieldsDialogOpen(true);
+  };
+
+  const saveCustomFields = async () => {
+    try {
+      await Promise.all(
+        Object.entries(customFieldDrafts).map(([fieldDefinitionId, value]) =>
+          setCustomFieldValue.mutateAsync({ fieldDefinitionId: Number(fieldDefinitionId), value })
+        )
+      );
+      await utils.profileFields.getValues.invalidate({ userId });
+      setCustomFieldsDialogOpen(false);
+      toast.success("Profile details updated.");
+    } catch (err: any) {
+      toast.error(err?.message ?? "Couldn't save those details.");
+    }
+  };
   const profileDiscussions = (discussionsQuery.data ?? []) as any[];
   const profileArticles = (articlesQuery.data ?? []) as any[];
   const profileBlogPosts = (blogPostsQuery.data ?? []) as any[];
@@ -464,6 +503,28 @@ export default function MemberProfile({ userId }: MemberProfileProps) {
                     ))}
                   </div>
                 )}
+                {(customFieldValues.length > 0 || isOwnProfile) && (
+                  <div className="mt-4">
+                    {customFieldValues.length > 0 && (
+                      <div className="flex flex-wrap gap-x-6 gap-y-1.5">
+                        {customFieldValues
+                          .filter((v: any) => v.value.value)
+                          .sort((a: any, b: any) => a.definition.sortOrder - b.definition.sortOrder)
+                          .map((v: any) => (
+                            <div key={v.definition.id} className="text-sm">
+                              <span className="text-muted-foreground">{v.definition.label}: </span>
+                              <span className="text-foreground font-medium">{v.value.value}</span>
+                            </div>
+                          ))}
+                      </div>
+                    )}
+                    {isOwnProfile && customFieldDefs.length > 0 && (
+                      <Button variant="ghost" size="sm" className="mt-1.5 -ml-2 gap-1.5 text-muted-foreground" onClick={openCustomFieldsDialog}>
+                        <Pencil className="w-3 h-3" /> Edit details
+                      </Button>
+                    )}
+                  </div>
+                )}
               </div>
 
               {/* Tier Badge */}
@@ -661,6 +722,60 @@ export default function MemberProfile({ userId }: MemberProfileProps) {
           <MemberList members={following} label="following" />
         </TabsContent>
       </Tabs>
+
+      {isOwnProfile && (
+        <Dialog open={customFieldsDialogOpen} onOpenChange={setCustomFieldsDialogOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Edit profile details</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4 py-2">
+              {customFieldDefs.map((def: any) => (
+                <div key={def.id} className="space-y-1.5">
+                  <Label htmlFor={`field-${def.id}`}>
+                    {def.label}{def.isRequired && <span className="text-destructive"> *</span>}
+                  </Label>
+                  {def.fieldType === "textarea" ? (
+                    <Textarea
+                      id={`field-${def.id}`}
+                      value={customFieldDrafts[def.id] || ""}
+                      onChange={e => setCustomFieldDrafts(prev => ({ ...prev, [def.id]: e.target.value }))}
+                    />
+                  ) : def.fieldType === "select" ? (
+                    <Select
+                      value={customFieldDrafts[def.id] || ""}
+                      onValueChange={v => setCustomFieldDrafts(prev => ({ ...prev, [def.id]: v }))}
+                    >
+                      <SelectTrigger id={`field-${def.id}`}>
+                        <SelectValue placeholder="Select..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {(def.options || []).map((opt: string) => (
+                          <SelectItem key={opt} value={opt}>{opt}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  ) : (
+                    <Input
+                      id={`field-${def.id}`}
+                      type={def.fieldType === "number" ? "number" : def.fieldType === "date" ? "date" : def.fieldType === "url" ? "url" : "text"}
+                      value={customFieldDrafts[def.id] || ""}
+                      onChange={e => setCustomFieldDrafts(prev => ({ ...prev, [def.id]: e.target.value }))}
+                    />
+                  )}
+                </div>
+              ))}
+              {customFieldDefs.length === 0 && (
+                <p className="text-sm text-muted-foreground">No custom fields have been set up yet.</p>
+              )}
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setCustomFieldsDialogOpen(false)}>Cancel</Button>
+              <Button onClick={saveCustomFields} disabled={setCustomFieldValue.isPending}>Save</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
     </div>
   );
 }
