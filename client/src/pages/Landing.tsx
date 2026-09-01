@@ -318,7 +318,8 @@ export default function Home() {
               <ul className="space-y-2 text-sm text-slate-400">
                 <li><a href="/signin" className="hover:text-white transition">About OPA</a></li>
                 <li><a href="/signin" className="hover:text-white transition">Contact</a></li>
-                <li><a href="/signin" className="hover:text-white transition">Privacy</a></li>
+                <li><a href="/terms" className="hover:text-white transition">Terms</a></li>
+                <li><a href="/privacy" className="hover:text-white transition">Privacy</a></li>
               </ul>
             </div>
           </div>
