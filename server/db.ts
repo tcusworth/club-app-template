@@ -8,7 +8,7 @@ import {
   migrationPlans, rfpDocuments,
   forumCategories, discussions, forumPosts, forumGroups, groupMembers, groupJoinRequests, directMessages, forumNotifications, userProfiles,
   memberFollows, memberBadges, activityLog, activityReactions, connectionRequests, pointsTransactions, groupAnnouncements,
-  documentFolders, documents, profileFieldDefinitions, profileFieldValues,
+  documentFolders, documents, profileFieldDefinitions, profileFieldValues, contentReports,
   blogPosts,
   events, eventRsvps,
   courses, courseEnrollments, lessons, lessonProgress,
@@ -842,7 +842,7 @@ export async function getDiscussionsByCategory(categoryId: number, limit = 20, o
     .offset(offset);
 }
 
-export async function getDiscussionBySlug(slug: string) {
+export async function getDiscussionBySlug(slug: string, requesterIsAdmin = false) {
   const db = await getDb();
   if (!db) return null;
   const result = await db.select({
@@ -855,6 +855,7 @@ export async function getDiscussionBySlug(slug: string) {
     postType: discussions.postType,
     isPinned: discussions.isPinned,
     isLocked: discussions.isLocked,
+    isHidden: discussions.isHidden,
     viewCount: discussions.viewCount,
     replyCount: discussions.replyCount,
     tags: discussions.tags,
@@ -869,7 +870,11 @@ export async function getDiscussionBySlug(slug: string) {
   }).from(discussions)
     .leftJoin(users, eq(discussions.authorId, users.id))
     .where(eq(discussions.slug, slug)).limit(1);
-  return result.length > 0 ? result[0] : null;
+  const found = result.length > 0 ? result[0] : null;
+  // Hidden discussions are treated as not-found for non-admins — same
+  // pattern as secret groups: don't reveal that moderated content exists.
+  if (found && found.isHidden && !requesterIsAdmin) return null;
+  return found;
 }
 
 export async function getDiscussionById(id: number) {
@@ -909,9 +914,12 @@ export async function createForumPost(data: { discussionId: number; authorId: nu
   return result;
 }
 
-export async function getForumPostsByDiscussion(discussionId: number) {
+export async function getForumPostsByDiscussion(discussionId: number, requesterIsAdmin = false) {
   const db = await getDb();
   if (!db) return [];
+  const conditions = requesterIsAdmin
+    ? eq(forumPosts.discussionId, discussionId)
+    : and(eq(forumPosts.discussionId, discussionId), eq(forumPosts.isHidden, false));
   return db.select({
     id: forumPosts.id,
     discussionId: forumPosts.discussionId,
@@ -921,13 +929,14 @@ export async function getForumPostsByDiscussion(discussionId: number) {
     mediaUrls: forumPosts.mediaUrls,
     likeCount: forumPosts.likeCount,
     isSolution: forumPosts.isSolution,
+    isHidden: forumPosts.isHidden,
     createdAt: forumPosts.createdAt,
     updatedAt: forumPosts.updatedAt,
     authorName: users.name,
     authorVerificationStatus: users.verificationStatus,
   }).from(forumPosts)
     .leftJoin(users, eq(forumPosts.authorId, users.id))
-    .where(eq(forumPosts.discussionId, discussionId))
+    .where(conditions)
     .orderBy(forumPosts.createdAt);
 }
 
@@ -1178,6 +1187,101 @@ export async function deleteDocument(documentId: number, requesterId: number, re
   await assertCanManageDocuments(db, requesterRole, doc.groupId, requesterId);
   await db.delete(documents).where(eq(documents.id, documentId));
   return { success: true };
+}
+
+// ─── Moderation: Content Reports ─────────────────────────────────────
+// General-purpose flag/hide for ordinary discussion posts and replies.
+// Separate from the existing contentNodes admin-approval workflow, which
+// only covers knowledge-base articles.
+export async function reportContent(data: { targetType: "discussion" | "post"; targetId: number; reportedBy: number; reason: string }) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const result = await db.insert(contentReports).values(data);
+  return result;
+}
+
+export async function getPendingReports() {
+  const db = await getDb();
+  if (!db) return [];
+  const reports = await db.select({
+    report: contentReports,
+    reporter: { id: users.id, name: users.name, email: users.email },
+  }).from(contentReports)
+    .innerJoin(users, eq(contentReports.reportedBy, users.id))
+    .where(eq(contentReports.status, "pending"))
+    .orderBy(desc(contentReports.createdAt));
+
+  // Attach a snippet of the actual reported content, and its author, so
+  // an admin doesn't have to leave the moderation queue to see what was
+  // flagged. Reported content that's since been deleted shows as null.
+  const withContent = await Promise.all(reports.map(async (r) => {
+    if (r.report.targetType === "discussion") {
+      const [d] = await db.select({ id: discussions.id, title: discussions.title, content: discussions.content, authorId: discussions.authorId, isHidden: discussions.isHidden, slug: discussions.slug })
+        .from(discussions).where(eq(discussions.id, r.report.targetId)).limit(1);
+      return { ...r, content: d ?? null };
+    } else {
+      const [p] = await db.select({ id: forumPosts.id, content: forumPosts.content, authorId: forumPosts.authorId, isHidden: forumPosts.isHidden, discussionId: forumPosts.discussionId })
+        .from(forumPosts).where(eq(forumPosts.id, r.report.targetId)).limit(1);
+      return { ...r, content: p ?? null };
+    }
+  }));
+  return withContent;
+}
+
+export async function resolveReport(reportId: number, reviewerId: number, action: "dismiss" | "hide", reviewNotes?: string) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const [report] = await db.select().from(contentReports).where(eq(contentReports.id, reportId)).limit(1);
+  if (!report) throw new Error("Report not found");
+  if (report.status !== "pending") throw new Error("Report already resolved");
+  await db.update(contentReports)
+    .set({ status: action === "hide" ? "actioned" : "dismissed", reviewedBy: reviewerId, reviewNotes, reviewedAt: new Date() })
+    .where(eq(contentReports.id, reportId));
+  if (action === "hide") {
+    if (report.targetType === "discussion") {
+      await db.update(discussions).set({ isHidden: true }).where(eq(discussions.id, report.targetId));
+    } else {
+      await db.update(forumPosts).set({ isHidden: true }).where(eq(forumPosts.id, report.targetId));
+    }
+  }
+  return { success: true };
+}
+
+export async function setContentHidden(targetType: "discussion" | "post", targetId: number, isHidden: boolean) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  if (targetType === "discussion") {
+    await db.update(discussions).set({ isHidden }).where(eq(discussions.id, targetId));
+  } else {
+    await db.update(forumPosts).set({ isHidden }).where(eq(forumPosts.id, targetId));
+  }
+  return { success: true };
+}
+
+// ─── Moderation: Member Suspension ───────────────────────────────────
+export async function suspendUser(userId: number, reason: string, suspendedBy: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.update(users).set({ suspendedAt: new Date(), suspensionReason: reason, suspendedBy }).where(eq(users.id, userId));
+  return { success: true };
+}
+
+export async function unsuspendUser(userId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.update(users).set({ suspendedAt: null, suspensionReason: null, suspendedBy: null }).where(eq(users.id, userId));
+  return { success: true };
+}
+
+// Call at the top of any mutation that a suspended member shouldn't be able
+// to perform. NOTE: only wired into createDiscussion/createPost so far —
+// not a full sweep across every write path (creating groups, uploading
+// documents, RSVPing to events, etc. are NOT yet suspension-gated). Extend
+// call-by-call as needed, same pattern as here.
+export function assertNotSuspended(user: { suspendedAt?: Date | string | null }) {
+  if (user.suspendedAt) {
+    throw new Error("Your account is currently suspended and can't post. Contact an admin if you believe this is a mistake.");
+  }
 }
 
 // ─── Custom Profile Fields ───────────────────────────────────────────
