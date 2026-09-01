@@ -33,6 +33,7 @@ import Blog from "./pages/Blog";
 import BlogPost from "./pages/BlogPost";
 import Notifications from "./pages/Notifications";
 import Events from "./pages/Events";
+import DocumentLibrary from "./pages/DocumentLibrary";
 import GroupDetail from "./pages/GroupDetail";
 import MyProfile from "./pages/MyProfile";
 import MyConnections from "./pages/MyConnections";
@@ -152,6 +153,9 @@ function Router() {
       </Route>
       <Route path="/events">
         <DashboardLayout><Events /></DashboardLayout>
+      </Route>
+      <Route path="/documents">
+        <DashboardLayout><DocumentLibrary /></DashboardLayout>
       </Route>
       <Route path="/notifications">
         <DashboardLayout><Notifications /></DashboardLayout>
