@@ -6,6 +6,13 @@ import { createRoot } from "react-dom/client";
 import superjson from "superjson";
 import App from "./App";
 import "./index.css";
+import { CLUB_NAME } from "@/lib/clubConfig";
+
+// index.html's <title> is static markup and can't read clubConfig.ts at
+// build time — this sets the real tab title at runtime instead. The static
+// title in index.html still matters as the pre-JS/crawler fallback, so it
+// should be kept in sync manually when cloning for a new club.
+document.title = CLUB_NAME;
 
 const queryClient = new QueryClient({
   defaultOptions: {
