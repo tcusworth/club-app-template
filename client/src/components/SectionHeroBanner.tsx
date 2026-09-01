@@ -245,7 +245,7 @@ export default function SectionHeroBanner({ sectionKey, fallbackGradient }: Sect
               <Input
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
-                placeholder="e.g. OPA Community Forum"
+                placeholder="e.g. Community Forum"
                 className="mt-1"
               />
             </div>
