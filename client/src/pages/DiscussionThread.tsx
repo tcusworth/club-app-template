@@ -27,6 +27,8 @@ import {
   Trash2,
   Image,
   Video,
+  Flag,
+  EyeOff,
 } from "lucide-react";
 import { useLocation } from "wouter";
 import { VerifiedBadge } from "@/components/VerifiedBadge";
@@ -106,6 +108,8 @@ export default function DiscussionThread({ slug }: DiscussionThreadProps) {
   const [editIsUploading, setEditIsUploading] = useState(false);
   const editPhotoRef = useRef<HTMLInputElement>(null);
   const editVideoRef = useRef<HTMLInputElement>(null);
+  const [reportDialogTarget, setReportDialogTarget] = useState<{ type: "discussion" | "post"; id: number } | null>(null);
+  const [reportReason, setReportReason] = useState("");
 
   const discussionQuery = trpc.forum.getDiscussionBySlug.useQuery({ slug });
   const postsQuery = trpc.forum.getPostsByDiscussion.useQuery(
@@ -219,6 +223,24 @@ export default function DiscussionThread({ slug }: DiscussionThreadProps) {
       discussionQuery.refetch();
     },
     onError: (err: any) => toast.error(err.message || "Failed to pin"),
+  });
+
+  const reportMutation = trpc.moderation.report.useMutation({
+    onSuccess: () => {
+      toast.success("Thanks — an admin will review this.");
+      setReportDialogTarget(null);
+      setReportReason("");
+    },
+    onError: (err: any) => toast.error(err.message || "Couldn't submit that report."),
+  });
+
+  const setHiddenMutation = trpc.moderation.setHidden.useMutation({
+    onSuccess: () => {
+      toast.success("Updated.");
+      discussionQuery.refetch();
+      postsQuery.refetch();
+    },
+    onError: (err: any) => toast.error(err.message || "Couldn't update visibility."),
   });
 
   const discussion = discussionQuery.data;
@@ -372,6 +394,16 @@ export default function DiscussionThread({ slug }: DiscussionThreadProps) {
                 : "AI Summary"}
             </Button>
           )}
+          {user && !isAuthor && (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="gap-1.5 text-muted-foreground"
+              onClick={() => setReportDialogTarget({ type: "discussion", id: discussion.id })}
+            >
+              <Flag className="w-3.5 h-3.5" /> Report
+            </Button>
+          )}
           {canManage && (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -384,6 +416,14 @@ export default function DiscussionThread({ slug }: DiscussionThreadProps) {
                   <DropdownMenuItem onClick={handlePin}>
                     <Pin className="w-4 h-4 mr-2" />
                     {discussion.isPinned ? "Unpin" : "Pin"}
+                  </DropdownMenuItem>
+                )}
+                {isAdmin && (
+                  <DropdownMenuItem
+                    onClick={() => setHiddenMutation.mutate({ targetType: "discussion", targetId: discussion.id, isHidden: !(discussion as any).isHidden })}
+                  >
+                    <EyeOff className="w-4 h-4 mr-2" />
+                    {(discussion as any).isHidden ? "Unhide" : "Hide"}
                   </DropdownMenuItem>
                 )}
                 <DropdownMenuItem onClick={openEditDialog}>
@@ -616,6 +656,27 @@ export default function DiscussionThread({ slug }: DiscussionThreadProps) {
                               Mark Accepted
                             </Button>
                           )}
+                          {user && post.authorId !== user.id && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-7 px-2 text-xs text-muted-foreground gap-1"
+                              onClick={() => setReportDialogTarget({ type: "post", id: post.id })}
+                            >
+                              <Flag className="w-3.5 h-3.5" />
+                            </Button>
+                          )}
+                          {isAdmin && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-7 px-2 text-xs text-muted-foreground gap-1"
+                              onClick={() => setHiddenMutation.mutate({ targetType: "post", targetId: post.id, isHidden: !(post as any).isHidden })}
+                            >
+                              <EyeOff className="w-3.5 h-3.5" />
+                              {(post as any).isHidden ? "Unhide" : "Hide"}
+                            </Button>
+                          )}
                         </div>
                       </div>
                       <div className="prose prose-sm dark:prose-invert max-w-none">
@@ -840,6 +901,27 @@ export default function DiscussionThread({ slug }: DiscussionThreadProps) {
       </Dialog>
 
       {/* Delete Confirmation */}
+      <Dialog open={!!reportDialogTarget} onOpenChange={(open) => { if (!open) { setReportDialogTarget(null); setReportReason(""); } }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Report {reportDialogTarget?.type === "discussion" ? "discussion" : "reply"}</DialogTitle>
+          </DialogHeader>
+          <div className="py-2 space-y-1.5">
+            <Label>What's wrong with this {reportDialogTarget?.type === "discussion" ? "discussion" : "reply"}?</Label>
+            <Textarea value={reportReason} onChange={e => setReportReason(e.target.value)} placeholder="Tell us what's wrong..." rows={4} />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => { setReportDialogTarget(null); setReportReason(""); }}>Cancel</Button>
+            <Button
+              disabled={!reportReason.trim() || reportMutation.isPending}
+              onClick={() => reportDialogTarget && reportMutation.mutate({ targetType: reportDialogTarget.type, targetId: reportDialogTarget.id, reason: reportReason.trim() })}
+            >
+              Submit Report
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
